@@ -4,12 +4,13 @@ import express, { response } from "express"
 import helmet from "helmet";
 import { Logger } from "./Utilities/Logger.js"
 import MongoConnect from "./Configurations/DB_Connection.js"
-
 import { errors } from 'celebrate';
-
 import session from "express-session";
 import passport from "./Middleware/googleAuth.js";
-
+import UserRoute from "./Routes/UserRoute.js"
+import CowRoute from "./Routes/CowRoute.js"
+import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
+import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 
 const app = express()
 const PORT = process.env.PORT
@@ -22,19 +23,7 @@ app.use(cors({
 // security headers
 app.use(helmet());
 
-// Content Security Policy: adjust sources for your needs
-app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "https://checkout.stripe.com"],
-            connectSrc: ["'self'", "https://checkout.stripe.com"],
-            imgSrc: ["'self'", "data:"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            frameSrc: ["'self'", "https://checkout.stripe.com"],
-        },
-    })
-);
+
 
 app.use(session({ secret: process.env.SECRET, resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
@@ -50,9 +39,12 @@ app.use((req, res, next) =>
 })
 
 //routes
-//app.use('/auth', UserRoute)
+app.use("/auth", UserRoute);
+app.use("/cows",  CowRoute);
+app.use("/lact",  LactationCycleRoute);
+app.use("/milk",  MilkingRecordRoute);
 
-app.use(errors());
+app.use(errors()); 
 
 app.listen(PORT, () =>
 {
