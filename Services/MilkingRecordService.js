@@ -108,11 +108,23 @@ class MilkingRecordService {
       await session.commitTransaction();
       session.endSession();
 
-      return {
+      const predictedMilk = prediction.data.prediction;
+
+      const recommendation = generateMilkRecommendations(
+        dailyMilk,
+        predictedMilk
+      );
+
+
+            return {
         milkingRecord,
-        prediction: prediction.data,
-        features
+        prediction: {
+          value: predictedMilk,
+        },
+        recommendation,
+        features,
       };
+
 
     } catch (err) {
       await session.abortTransaction();
@@ -124,3 +136,59 @@ class MilkingRecordService {
 }
 
 export default new MilkingRecordService();
+
+function generateMilkRecommendations(actual, predicted) {
+  const diff = actual - predicted;
+  const diffPercent = predicted > 0 ? (diff / predicted) * 100 : 0;
+
+  let status = "normal";
+  let color = "blue";
+  let title = "";
+  let message = "";
+  let actions = [];
+
+  if (diffPercent > 20) {
+    status = "above_expected";
+    color = "green";
+    title = "Excellent Performance ";
+    message = "Milk yield is significantly higher than the predicted value.";
+    actions = [
+      "Maintain the current feeding schedule",
+      "Continue regular health monitoring",
+      "This cow is performing better than expected",
+    ];
+  } 
+  else if (diffPercent >= -10 && diffPercent <= 20) {
+    status = "on_track";
+    color = "blue";
+    title = "On Track ";
+    message = "Milk yield is within the expected prediction range.";
+    actions = [
+      "No immediate action required",
+      "Continue the current management routine",
+    ];
+  } 
+  else {
+    status = "below_expected";
+    color = "orange";
+    title = "Needs Attention ";
+    message = "Milk yield is lower than predicted.";
+    actions = [
+      "Review feed quality and quantity",
+      "Ensure sufficient clean water intake",
+      "Observe cow behavior for stress or discomfort",
+    ];
+  }
+
+  return {
+    actualMilk: Number(actual.toFixed(1)),
+    predictedMilk: Number(predicted.toFixed(1)),
+    deviation: Number(diff.toFixed(2)),
+    deviationPercent: Number(diffPercent.toFixed(1)),
+    status,
+    color,
+    title,
+    message,
+    actions,
+  };
+}

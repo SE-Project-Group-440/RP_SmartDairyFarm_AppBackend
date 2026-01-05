@@ -15,15 +15,15 @@ import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 const app = express()
 const PORT = process.env.PORT
 
-app.use(cors({
-    origin: 'http://localhost:5173',
-    optionsSuccessStatus: 200
-}))
+// app.use(cors({
+//     origin: 'http://localhost:5173',
+//     optionsSuccessStatus: 200
+// }))
 
-// security headers
+app.use(cors())
+
+// security headerss
 app.use(helmet());
-
-
 
 app.use(session({ secret: process.env.SECRET, resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
