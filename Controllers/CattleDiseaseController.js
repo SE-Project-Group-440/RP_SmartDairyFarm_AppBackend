@@ -1,4 +1,4 @@
-import CattleDiseaseService from "../services/CattleDiseaseService.js";
+import CattleDiseaseService from "../Services/CattleDiseaseService.js";
 
 class CattleDiseaseController {
   static async predictDisease(req, res) {
