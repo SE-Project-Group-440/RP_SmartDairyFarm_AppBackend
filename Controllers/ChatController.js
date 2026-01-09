@@ -8,8 +8,8 @@ export const askChat = async (req, res) => {
   }
 
   try {
-    // Forward the query to FastAPI
-    const response = await axios.post("http://127.0.0.1:8002/chat", { query }, {
+    // Forward the query to FastAPI 10.248.75.24
+    const response = await axios.post("http://10.248.75.24:8002/chat", { query }, {
       headers: {
         "Content-Type": "application/json"
       }

@@ -22,23 +22,11 @@ const allowedOrigins = [
   "http://localhost:8081",      // Expo Web dev
   "http://localhost:19000",     // Expo web default
   "http://127.0.0.1:19000",
-  "http://192.168.1.10:19000"  // Expo Go mobile (replace with your PC LAN IP)
+  "http://172.28.1.64:19000"  // Expo Go mobile (replace with your PC LAN IP)
 ];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps)
-    if (!origin) return callback(null, true);
+app.use(cors());
 
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'CORS not allowed for this origin';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
 
 
 // security headers
