@@ -22,6 +22,7 @@ const requireAuth = async (req, res, next) => {
 
     // Attach user details to the request object
     req.user = user;
+    req.token = token
     next();
   } catch (error) {
     console.log(error);
