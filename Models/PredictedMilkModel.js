@@ -31,7 +31,19 @@ const milkingRecordPredSchema = new mongoose.Schema(
       type: Number
     },
 
-     LactationPredStatus :{  type: String,
+    // actual recorded milk for that predicted day (when available)
+    actualDailyMilk: {
+      type: Number,
+      default: null,
+    },
+
+    // flag indicating whether actual recording has been done for this prediction
+    dailyMilkPredDone: {
+      type: Number,
+      default: 0,
+    },
+
+    LactationPredStatus :{  type: String,
       enum: ["Completed", "NotCompleted"],
       default: "Completed",},   
 

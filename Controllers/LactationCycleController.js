@@ -1,10 +1,22 @@
 import service from "../Services/LactationCycleService.js";
+import predictionService from "../Services/MilkingPredictionService.js";
 
 class LactationCycleController {
   async create(req, res) {
     try {
       const result = await service.create(req.body);
       res.status(201).json(result);
+
+      // trigger generation of full lactation predictions (run in background)
+      try {
+        const authHeader = req.headers.authorization || "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+        predictionService.generateFullLactationPrediction({ cowId: result.cowId || result.cowId, token }).catch((e) =>
+          console.error("Prediction generation failed:", e.message)
+        );
+      } catch (e) {
+        console.error("Failed to start prediction generation:", e.message);
+      }
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

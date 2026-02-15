@@ -1,8 +1,10 @@
 import MilkingRecordRepository from "../Repositories/MilkingRecordRepository.js";
 import lactationCycleRepository from "../Repositories/LactationCycleRepository.js"
 import cowRepository from "../Repositories/CowRepository.js"
+import RecommendationService from "./RecommendationService.js";
 import mongoose from "mongoose";
 import axios from "axios";
+import MilkRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
 
 class MilkingRecordService {
   create(data) {
@@ -202,6 +204,31 @@ class MilkingRecordService {
         milkingRecord.dailyMilk,
         predictedMilk
       );
+
+      await RecommendationService.createIfCritical({
+        cowId,
+        lactationCycleId: cycle._id,
+        milkingRecordId: milkingRecord._id,
+        recommendation,
+        session,
+      });
+
+      // update the corresponding predicted entry with actuals and mark done
+      try {
+        await MilkRecordPredRepository.updateByCycleAndDay(
+          cycle._id,
+          milkingRecord.milkingDay,
+          {
+            dailyMilkPred: predictedMilk,
+            dailyMilkPredDone: 1,
+            actualDailyMilk: milkingRecord.dailyMilk,
+          },
+          session
+        );
+      } catch (e) {
+        console.error("Failed to update prediction record:", e.message);
+      }
+
     }
 
     /* -------------------- COMMIT -------------------- */

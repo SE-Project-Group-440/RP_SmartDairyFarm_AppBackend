@@ -49,7 +49,7 @@ class CowService {
 
             const cow = await cowRepository.create(cowData, { session });
 
-            
+
             await session.commitTransaction();
             session.endSession();
 
@@ -106,6 +106,10 @@ class CowService {
         }
 
         return lastCow.tagId + 1;
+    }
+
+    async getCowsWithLactationSummary() {
+        return await cowRepository.getAllWithLactationSummary();
     }
 
 }
