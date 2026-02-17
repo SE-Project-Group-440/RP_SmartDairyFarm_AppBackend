@@ -222,6 +222,7 @@ class MilkingRecordService {
             dailyMilkPred: predictedMilk,
             dailyMilkPredDone: 1,
             actualDailyMilk: milkingRecord.dailyMilk,
+            LactationPredStatus: "Completed",
           },
           session
         );

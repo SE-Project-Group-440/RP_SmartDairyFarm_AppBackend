@@ -20,11 +20,10 @@ class MilkingPredictionService {
       const predictions = [];
       const startDate = new Date(cycle.startDate || Date.now());
 
-      // 🔁 Predict for 280 days
+      // Predict for 280 days
       for (let day = 1; day <= 280; day++) {
         const lactationLength = day - 1;
 
-        // 🔹 One-hot encoding (same as your logic)
         const Breed_MX = cow.breed === "MX" ? 1 : 0;
         const Breed_Murrha = cow.breed === "Murrah" ? 1 : 0;
         const Breed_NX = cow.breed === "NX" ? 1 : 0;
@@ -48,7 +47,7 @@ class MilkingPredictionService {
           Health_Unhealthy,
         ];
 
-        // 🔮 ML Prediction
+        
         const response = await axios.post(
           "http://localhost:5000/api/predict",
           { features },
@@ -70,10 +69,11 @@ class MilkingPredictionService {
           ),
           dailyMilkPred: predictedMilk,
           dailyMilkPredDone: 0,
+          LactationPredStatus: "NotCompleted",
         });
       }
 
-      // 💾 Save all predictions in one go
+      
       await milkingRecordPredRepository.bulkCreate(predictions, session);
 
       await session.commitTransaction();

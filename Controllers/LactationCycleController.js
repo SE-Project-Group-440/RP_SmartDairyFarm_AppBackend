@@ -7,7 +7,7 @@ class LactationCycleController {
       const result = await service.create(req.body);
       res.status(201).json(result);
 
-      // trigger generation of full lactation predictions (run in background)
+      
       try {
         const authHeader = req.headers.authorization || "";
         const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;

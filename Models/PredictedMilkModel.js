@@ -43,9 +43,11 @@ const milkingRecordPredSchema = new mongoose.Schema(
       default: 0,
     },
 
-    LactationPredStatus :{  type: String,
+    LactationPredStatus: {
+      type: String,
       enum: ["Completed", "NotCompleted"],
-      default: "Completed",},   
+      default: "NotCompleted",
+    },   
 
   },
   { timestamps: true }
