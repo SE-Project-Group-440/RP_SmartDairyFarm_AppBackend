@@ -16,6 +16,10 @@ class MilkingRecordPredRepository {
     }
     return PredictedMilk.findOneAndUpdate(query, { $set: update }, { new: true });
   }
+
+  async getByCycle(lactationCycleId) {
+    return PredictedMilk.find({ lactationCycle: lactationCycleId }).sort({ milkingDayPred: 1 });
+  }
 }
 
 export default new MilkingRecordPredRepository();

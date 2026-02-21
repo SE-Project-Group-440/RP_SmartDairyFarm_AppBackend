@@ -35,6 +35,39 @@ class MilkingRecordService {
     return MilkingRecordRepository.delete(id);
   }
 
+  async getTodayMilk(cowId) {
+    // Get the latest lactation cycle for this cow
+    const cycle = await lactationCycleRepository.getLatestByCowId(cowId);
+    
+    if (!cycle) {
+      return {
+        morning: null,
+        evening: null,
+        message: "No active lactation cycle for this cow"
+      };
+    }
+
+    // Get today's milk record for this cow and cycle
+    const todayRecord = await MilkingRecordRepository.getTodayRecord(cowId, cycle._id);
+    
+    if (!todayRecord) {
+      return {
+        morning: null,
+        evening: null,
+        message: "No milk entry for today"
+      };
+    }
+
+    return {
+      morning: todayRecord.morning || null,
+      evening: todayRecord.evening || null,
+      dailyMilk: todayRecord.dailyMilk || null,
+      lactationCycleId: cycle._id,
+      lactationRound: cycle.lactationRound,
+      milkingDay: todayRecord.milkingDay || null
+    };
+  }
+
  async createMilkingRecord(data) {
   const session = await mongoose.startSession();
   session.startTransaction();

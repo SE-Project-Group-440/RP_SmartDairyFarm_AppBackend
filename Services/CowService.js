@@ -49,14 +49,12 @@ class CowService {
 
             const cow = await cowRepository.create(cowData, { session });
 
-
             await session.commitTransaction();
             session.endSession();
 
             return {
                 cow,
-                lactationCycle,
-                message: "Cow created with default lactation + milking record",
+                message: "Cow created successfully",
             };
 
         } catch (error) {

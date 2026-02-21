@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 import axios from "axios";
 
-import cowRepository from "../repositories/cow.repository.js";
-import lactationCycleRepository from "../repositories/lactationCycle.repository.js";
-import milkingRecordPredRepository from "../repositories/milkingRecordPred.repository.js";
+import cowRepository from "../Repositories/CowRepository.js";
+import lactationCycleRepository from "../Repositories/LactationCycleRepository.js";
+import MilkingRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
 
 class MilkingPredictionService {
   async generateFullLactationPrediction({ cowId, token }) {
@@ -74,7 +74,7 @@ class MilkingPredictionService {
       }
 
       
-      await milkingRecordPredRepository.bulkCreate(predictions, session);
+      await MilkingRecordPredRepository.bulkCreate(predictions, session);
 
       await session.commitTransaction();
       session.endSession();

@@ -13,6 +13,7 @@ import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
+import DashboardRoute from "./Routes/DashboardRoute.js"
 
 const app = express()
 const PORT = process.env.PORT
@@ -47,6 +48,7 @@ app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
 app.use("/rec",  recommendationRoute);
 app.use("/analytics", analyticsRoute);
+app.use("/dashboard", DashboardRoute);
 
 app.use(errors()); 
 

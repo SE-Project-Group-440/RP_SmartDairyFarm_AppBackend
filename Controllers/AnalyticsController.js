@@ -21,6 +21,26 @@ class AnalyticsController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  async getLatestLactationWithPredictions(req, res) {
+    try {
+      const { cowId } = req.params;
+
+      if (!cowId) {
+        return res.status(400).json({ error: "cowId is required" });
+      }
+
+      const result = await AnalyticsService.getLatestLactationWithPredictions(cowId);
+
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 }
 
 export default new AnalyticsController();

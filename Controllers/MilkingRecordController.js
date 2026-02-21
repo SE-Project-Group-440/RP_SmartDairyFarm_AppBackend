@@ -79,6 +79,19 @@ class MilkingRecordController {
     }
   }
 
+  async getTodayMilk(req, res) {
+    try {
+      const { cowId } = req.params;
+      if (!cowId) {
+        return res.status(400).json({ error: "cowId is required" });
+      }
+      const result = await service.getTodayMilk(cowId);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
 }
 
 export default new MilkingRecordController();
