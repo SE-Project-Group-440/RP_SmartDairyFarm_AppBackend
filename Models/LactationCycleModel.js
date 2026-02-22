@@ -15,6 +15,7 @@ const lactationCycleSchema = new mongoose.Schema(
     },
 
     calvingDate: { type: Date},
+    startDate: { type: Date, default: Date.now },
     lastCalvingDate: { type: Date },   
     actualDryDate: { type: Date },
     estimatedDryDate: { type: Date },

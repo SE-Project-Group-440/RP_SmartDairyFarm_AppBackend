@@ -91,35 +91,28 @@ class AnalyticsService {
         };
       }
 
-      // Get all predictions for this cycle
+      // Get all predictions for this cycle (predictions include actualDailyMilk)
       const predictions = await MilkRecordPredRepository.getByCycle(cycle._id);
 
-      // Get all actual milking records for this cycle
-      const actuals = await MilkingRecordRepository.findByCycleId(cycle._id);
-
-      // Merge predictions with actuals, mapping actual milking records to their days
-      const actualsByDay = {};
-      actuals.forEach((record) => {
-        // Match by date or milking day if stored
-        const dayKey = record.milkingDay || record.milkingDayPred || 0;
-        actualsByDay[dayKey] = (actualsByDay[dayKey] || 0) + (record.dailyMilk || 0);
-      });
-
+      // Merge predictions with their actual values (already stored in predictions)
       const merged = predictions.map((pred) => ({
         milkingDay: pred.milkingDayPred,
         datePred: pred.datePred,
         predictedMilk: pred.dailyMilkPred,
-        actualMilk: actualsByDay[pred.milkingDayPred] || 0,
+        actualMilk: pred.actualDailyMilk || 0,  // Use actualDailyMilk from prediction record
         completed: pred.LactationPredStatus === "Completed",
         predId: pred._id,
       }));
 
-      // Calculate totals
-      const actualTotal = actuals.reduce((sum, r) => sum + (r.dailyMilk || 0), 0);
+      // Calculate totals using prediction record data
+      const actualTotal = predictions.reduce((sum, p) => sum + (p.actualDailyMilk || 0), 0);
       const predictedTotal = predictions.reduce((sum, p) => sum + (p.dailyMilkPred || 0), 0);
 
+      // Count completed days (where actualDailyMilk is set)
+      const completedDays = predictions.filter(p => p.actualDailyMilk != null && p.actualDailyMilk > 0).length;
+
       // Calculate averages
-      const actualAvg = actuals.length > 0 ? actualTotal / actuals.length : 0;
+      const actualAvg = completedDays > 0 ? actualTotal / completedDays : 0;
       const predictedAvg = predictions.length > 0 ? predictedTotal / predictions.length : 0;
 
       return {
@@ -138,7 +131,7 @@ class AnalyticsService {
         predictions: merged,
         summary: {
           totalDays: predictions.length,
-          completedDays: actuals.length,
+          completedDays: completedDays,
           actualTotal: Number(actualTotal.toFixed(2)),
           predictedTotal: Number(predictedTotal.toFixed(2)),
           actualAvg: Number(actualAvg.toFixed(2)),
