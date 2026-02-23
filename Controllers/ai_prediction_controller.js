@@ -11,7 +11,7 @@ class AiRecommendationController {
       const result = await AiPredictionService.recommend({ row });
 
       const saved = await AiRecommendation.create({
-        cowId,
+        cowId: cowId.toString(),
         input_data: row,
         recommended_next_ai: result.recommended_next_ai,
         status: "PENDING",
