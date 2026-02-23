@@ -11,6 +11,7 @@ import UserRoute from "./Routes/UserRoute.js"
 import CowRoute from "./Routes/CowRoute.js"
 import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
+import aiRecommendationRoutes from "./Routes/ai_prediction_routes.js";
 
 const app = express()
 const PORT = process.env.PORT
@@ -43,6 +44,8 @@ app.use("/auth", UserRoute);
 app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
+
+app.use("/api/ai", aiRecommendationRoutes);
 
 app.use(errors()); 
 
