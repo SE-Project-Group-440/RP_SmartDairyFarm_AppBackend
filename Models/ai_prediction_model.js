@@ -24,6 +24,9 @@ const aiRecommendationSchema = new mongoose.Schema(
       enum: ["PENDING", "COMPLETED"],
       default: "PENDING",
     },
+    ai_date: {
+      type: Date,
+    },
     // Pregnancy prediction fields
     pregnancy_probability: Number,
     risk_level: String,

@@ -9,5 +9,6 @@ router.post("/recommend", AiRecommendationController.recommend);
 // Mark AI as done → triggers pregnancy prediction
 router.post("/done/:recommendationId", AiRecommendationController.markAsDone);
 router.get("/pending", AiRecommendationController.getPending);
+router.get("/all", AiRecommendationController.getAll);
 
 export default router;

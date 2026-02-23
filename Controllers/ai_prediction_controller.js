@@ -28,9 +28,8 @@ class AiRecommendationController {
   async markAsDone(req, res) {
     try {
       const { recommendationId } = req.params;
-      const { ai_date } = req.body; // optional, date of AI
+      const { ai_date } = req.body;
 
-      // 1️⃣ Find the recommendation
       const recommendation = await AiRecommendation.findById(recommendationId);
       if (!recommendation) {
         return res.status(404).json({ error: "Recommendation not found" });
@@ -40,20 +39,40 @@ class AiRecommendationController {
         return res.status(400).json({ error: "AI already completed" });
       }
 
-      // 2️⃣ Update status and AI date
+      // 1️⃣ Update status
       recommendation.status = "COMPLETED";
-      if (ai_date) recommendation.ai_date = new Date(ai_date);
+      recommendation.ai_date = new Date(ai_date);
+
+      // 2️⃣ Prepare row for pregnancy model
+      const pregnancyPayload = {
+        row: {
+          ...recommendation.input_data,
+          AI_Date: ai_date   // 🔥 VERY IMPORTANT (FastAPI expects this key)
+        }
+      };
+
+      // 3️⃣ Call FastAPI pregnancy prediction
+      const pregnancyResult = await AiPredictionService.predict(pregnancyPayload);
+
+      // 4️⃣ Save pregnancy results
+      recommendation.pregnancy_probability = pregnancyResult.pregnancy_probability;
+      recommendation.risk_level = pregnancyResult.risk_level;
+      recommendation.days_since_ai = pregnancyResult.days_since_ai;
+      recommendation.pregnancy_check_date = new Date(pregnancyResult.pregnancy_check_date);
 
       await recommendation.save();
 
       res.json({
-        message: "AI marked as done successfully",
+        message: "AI marked as done and pregnancy predicted",
         recommendation
       });
+
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: err.message });
     }
   }
+
 
   async getPending(req, res) {
     try {
@@ -63,6 +82,14 @@ class AiRecommendationController {
       res.status(500).json({ error: err.message });
     }
   }
+  async getAll(req, res) {
+  try {
+    const data = await AiRecommendation.find().sort({ createdAt: -1 });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
 }
 
