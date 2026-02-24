@@ -90,6 +90,31 @@ class AiRecommendationController {
     res.status(500).json({ error: err.message });
   }
 }
+// Confirm pregnancy check result manually
+async confirmPregnancy(req, res) {
+  try {
+    const { recommendationId } = req.params;
+    const { pregnancy_check_status } = req.body;
+
+    const recommendation = await AiRecommendation.findById(recommendationId);
+
+    if (!recommendation) {
+      return res.status(404).json({ error: "Recommendation not found" });
+    }
+
+    recommendation.pregnancy_check_status = pregnancy_check_status;
+
+    await recommendation.save();
+
+    res.json({
+      message: "Pregnancy status updated successfully",
+      recommendation,
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
 }
 

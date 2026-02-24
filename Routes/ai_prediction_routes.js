@@ -10,5 +10,9 @@ router.post("/recommend", AiRecommendationController.recommend);
 router.post("/done/:recommendationId", AiRecommendationController.markAsDone);
 router.get("/pending", AiRecommendationController.getPending);
 router.get("/all", AiRecommendationController.getAll);
+router.post(
+  "/confirm-pregnancy/:recommendationId",
+  AiRecommendationController.confirmPregnancy
+);
 
 export default router;
