@@ -9,6 +9,13 @@ class CowRepository {
     return await Cow.find();
   }
 
+  async getRecent(limit = 5) {
+    return await Cow.find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+  }
+
   async getById(id) {
     return await Cow.findById(id);
   }

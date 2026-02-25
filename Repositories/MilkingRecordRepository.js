@@ -62,6 +62,14 @@ class MilkingRecordRepository {
     });
   }
 
+  async getRecent(limit = 20) {
+    return await MilkingRecord.find()
+      .sort({ date: -1 })
+      .limit(limit)
+      .populate("cowId")
+      .lean();
+  }
+
 
 }
 

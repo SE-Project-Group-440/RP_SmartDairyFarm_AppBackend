@@ -71,6 +71,19 @@ class CowController {
       });
     }
   }
+
+  async getRecentHistory(req, res) {
+    try {
+      const { cowLimit, milkLimit } = req.query;
+      const result = await cowService.getRecentHistory({
+        cowLimit: cowLimit ? Number(cowLimit) : undefined,
+        milkLimit: milkLimit ? Number(milkLimit) : undefined,
+      });
+      res.json({ success: true, data: result });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 }
 
 export default new CowController();
