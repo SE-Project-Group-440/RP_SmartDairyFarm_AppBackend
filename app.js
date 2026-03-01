@@ -12,6 +12,7 @@ import CowRoute from "./Routes/CowRoute.js"
 import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 import ChatRouter from "./Routes/ChatRoute.js";
+import SttRoute from "./Routes/SttRoute.js";
 
 const app = express()
 const PORT = process.env.PORT
@@ -53,6 +54,8 @@ app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
 app.use("/chat", ChatRouter);
+app.use("/stt", SttRoute);
+
 
 app.use(errors()); 
 
