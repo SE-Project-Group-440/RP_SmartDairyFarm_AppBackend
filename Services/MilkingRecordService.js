@@ -68,6 +68,11 @@ class MilkingRecordService {
     };
   }
 
+  // retrieve all entries recorded on the current date
+  getTodayRecords() {
+    return MilkingRecordRepository.getTodayEntries();
+  }
+
  async createMilkingRecord(data) {
   const session = await mongoose.startSession();
   session.startTransaction();

@@ -92,6 +92,16 @@ class MilkingRecordController {
     }
   }
 
+  // returns a list of all milk records entered today (no cow filter)
+  async getTodayEntries(req, res) {
+    try {
+      const result = await service.getTodayRecords();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
 }
 
 export default new MilkingRecordController();

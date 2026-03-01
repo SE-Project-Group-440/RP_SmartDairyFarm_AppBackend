@@ -7,7 +7,10 @@ const MilkingRecordRoute = express.Router();
 
 MilkingRecordRoute.post("/", controller.create);
 MilkingRecordRoute.post("/milktoml",requireAuth, controller.createmilktoml);
+// get milk for specific cow today
 MilkingRecordRoute.get("/today/:cowId", controller.getTodayMilk);
+// list of all milk entries recorded today (used by dashboard)
+MilkingRecordRoute.get("/today", controller.getTodayEntries);
 MilkingRecordRoute.get("/", controller.getAll);
 MilkingRecordRoute.get("/cow/:cowId", controller.getByCow);
 MilkingRecordRoute.get("/cycle/:cycleId", controller.getByCycle);
