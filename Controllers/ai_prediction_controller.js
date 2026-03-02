@@ -1,9 +1,8 @@
-// controllers/aiRecommendationController.js
 import AiPredictionService from "../Services/ai_prediction_service.js";
 import AiRecommendation from "../Models/ai_prediction_model.js";
 
 class AiRecommendationController {
-  // Recommend AI date (original)
+  // Recommend AI date 
   async recommend(req, res) {
     try {
       const { cowId, row } = req.body;
@@ -39,22 +38,19 @@ class AiRecommendationController {
         return res.status(400).json({ error: "AI already completed" });
       }
 
-      // 1️⃣ Update status
+      //Update status
       recommendation.status = "COMPLETED";
       recommendation.ai_date = new Date(ai_date);
 
-      // 2️⃣ Prepare row for pregnancy model
       const pregnancyPayload = {
         row: {
           ...recommendation.input_data,
-          AI_Date: ai_date   // 🔥 VERY IMPORTANT (FastAPI expects this key)
+          AI_Date: ai_date   
         }
       };
 
-      // 3️⃣ Call FastAPI pregnancy prediction
       const pregnancyResult = await AiPredictionService.predict(pregnancyPayload);
 
-      // 4️⃣ Save pregnancy results
       recommendation.pregnancy_probability = pregnancyResult.pregnancy_probability;
       recommendation.risk_level = pregnancyResult.risk_level;
       recommendation.days_since_ai = pregnancyResult.days_since_ai;

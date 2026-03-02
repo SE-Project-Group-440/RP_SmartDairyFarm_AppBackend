@@ -4,7 +4,7 @@ class AiPredictionService {
 
   async recommend(data) {
     const response = await axios.post(
-      "http://10.109.230.24:5001/api/ai/recommend",
+      "http://10.98.42.24:5001/api/ai/recommend",
       data
     );
     return response.data;
@@ -12,7 +12,7 @@ class AiPredictionService {
 
   async predict(data) {
     const response = await axios.post(
-      "http://10.109.230.24:5001/api/ai/pregnancy",
+      "http://10.98.42.24:5001/api/ai/pregnancy",
       data
     );
     return response.data;

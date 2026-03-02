@@ -1,4 +1,3 @@
-// models/aiRecommendation.js
 import mongoose from "mongoose";
 
 const aiRecommendationSchema = new mongoose.Schema(
@@ -27,7 +26,7 @@ const aiRecommendationSchema = new mongoose.Schema(
     ai_date: {
       type: Date,
     },
-    // Pregnancy prediction fields
+    
     pregnancy_probability: Number,
     risk_level: String,
     days_since_ai: Number,
