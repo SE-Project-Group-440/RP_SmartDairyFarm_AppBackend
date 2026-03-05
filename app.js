@@ -12,7 +12,7 @@ import CowRoute from "./Routes/CowRoute.js"
 import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
- 
+import ChatRouter from "./Routes/ChatRoute.js";
  
 const app = express()
 const PORT = process.env.PORT
@@ -29,6 +29,11 @@ const PORT = process.env.PORT
 app.use(cors());
  
  
+
+
+
+
+
 // security headers
 app.use(helmet());
  
@@ -53,10 +58,10 @@ app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
 app.use("/cattle", cattleDiseaseRoutes);
- 
- 
-app.use(errors());
- 
+app.use("/chat", ChatRouter);
+
+app.use(errors()); 
+
 app.listen(PORT, () =>
 {
     Logger.info("Connected via Port " + PORT)
