@@ -17,4 +17,11 @@ router.post(
   CattleDiseaseController.predictDisease
 );
 
+// GET /api/cattle/disease/care/:diseaseType
+router.get(
+  "/disease/care/:diseaseType",
+  requireAuth,
+  CattleDiseaseController.getCareInstructions
+);
+
 export default router;
