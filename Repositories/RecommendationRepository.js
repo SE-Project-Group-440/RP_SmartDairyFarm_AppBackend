@@ -9,11 +9,13 @@ class RecommendationRepository {
     return Recommendation.find({
       cowId,
       isResolved: false,
-    }).sort({ createdAt: -1 });
+    }).populate('cowId', 'name').sort({ createdAt: -1 });
   }
 
    findAll() {
-    return Recommendation.find();
+    return Recommendation.find({
+      isResolved: false,
+    }).populate('cowId', 'name').sort({ createdAt: -1 });
   }
 
   resolve(id) {

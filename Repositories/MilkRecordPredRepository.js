@@ -5,6 +5,13 @@ class MilkingRecordPredRepository {
     return PredictedMilk.insertMany(records, { session });
   }
 
+  async getByCycleAndDay(lactationCycleId, milkingDay) {
+    return PredictedMilk.findOne({
+      lactationCycle: lactationCycleId,
+      milkingDayPred: milkingDay,
+    });
+  }
+
   async getByCowAndCycle(cowId, lactationCycleId) {
     return PredictedMilk.find({ cowId, lactationCycle: lactationCycleId }).sort({ milkingDayPred: 1 });
   }

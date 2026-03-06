@@ -14,15 +14,18 @@ class RecommendationService {
       return null;
     }
 
+    // store translation keys rather than raw text so that the frontend can
+    // localize the recommendation when rendering.
+    // `recommendation.key` corresponds to the status (e.g. "below_expected").
     return RecommendationRepository.create(
       {
         cowId,
         lactationCycleId,
         milkingRecordId,
         status: recommendation.status,
-        title: recommendation.title,
-        message: recommendation.message,
-        actions: recommendation.actions,
+        title: `${recommendation.key}_title`,
+        message: `${recommendation.key}_message`,
+        actions: recommendation.actions, // already an array of translation keys
       },
       { session }
     );

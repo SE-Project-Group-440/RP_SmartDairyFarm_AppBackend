@@ -2,8 +2,8 @@ import MilkingRecordRepository from "../Repositories/MilkingRecordRepository.js"
 import lactationCycleRepository from "../Repositories/LactationCycleRepository.js"
 import cowRepository from "../Repositories/CowRepository.js"
 import RecommendationService from "./RecommendationService.js";
+import MilkingPredictionService from "./MilkingPredictionService.js"; // added for generating full-curve predictions
 import mongoose from "mongoose";
-import axios from "axios";
 import MilkRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
 
 class MilkingRecordService {
@@ -78,7 +78,8 @@ class MilkingRecordService {
   session.startTransaction();
 
   try {
-    const { cowId, morning, evening, notes, token, calvingDate } = data;
+    // token optional; may be provided for downstream APIs if required
+    const { cowId, morning, evening, notes, calvingDate, token } = data;
 
     /* -------------------- VALIDATIONS -------------------- */
 
@@ -129,6 +130,14 @@ class MilkingRecordService {
         },
         { session }
       );
+
+      // once a new cycle is created we kick off prediction generation for the
+      // entire lactation curve; we don’t await it since it can take a while and
+      // should not block the transaction.
+      MilkingPredictionService
+        .generateFullLactationPrediction({ cowId, token })
+        .then((res) => console.log("Prediction job started", res))
+        .catch((err) => console.error("Prediction generation failed", err.message));
     }
 
     /* -------------------- TODAY RECORD -------------------- */
@@ -195,77 +204,50 @@ class MilkingRecordService {
 
     let prediction = null;
     let recommendation = null;
-    let features = null;
-
     if (hasFullMilkData) {
-      const lastCompletedCycle =
-        await lactationCycleRepository.getLastCompletedByCowId(cowId);
+      const predictedEntry = await MilkRecordPredRepository.getByCycleAndDay(
+        cycle._id,
+        milkingRecord.milkingDay
+      );
 
-      let lactationLength = 0;
+      if (
+        predictedEntry &&
+        typeof predictedEntry.dailyMilkPred === "number"
+      ) {
+        const allCyclePredictions =
+          await MilkRecordPredRepository.getByCycle(cycle._id);
 
-      if (lastCompletedCycle) {
-        const lastMilkOfPreviousCycle =
-          await MilkingRecordRepository.getLastMilkingDayByCycleId(
-            lastCompletedCycle._id
+        prediction = { value: predictedEntry.dailyMilkPred };
+        recommendation = generateMilkRecommendations({
+          actual: milkingRecord.dailyMilk,
+          predicted: predictedEntry.dailyMilkPred,
+          milkingDay: milkingRecord.milkingDay,
+          cyclePredictions: allCyclePredictions,
+        });
+
+        await RecommendationService.createIfCritical({
+          cowId,
+          lactationCycleId: cycle._id,
+          milkingRecordId: milkingRecord._id,
+          recommendation,
+          session,
+        });
+
+        // update the corresponding predicted entry with actuals and mark done
+        try {
+          await MilkRecordPredRepository.updateByCycleAndDay(
+            cycle._id,
+            milkingRecord.milkingDay,
+            {
+              dailyMilkPredDone: 1,
+              actualDailyMilk: milkingRecord.dailyMilk,
+              LactationPredStatus: "Completed",
+            },
+            session
           );
-
-        lactationLength =
-          lastMilkOfPreviousCycle?.milkingDay || 0;
-      }
-
-      features = [
-        milkingRecord.milkingDay,
-        cycle.lactationRound,
-        lactationLength,
-        cycle.calvingInterval || 0,
-        cycle.concentratedFoodsKg || 0,
-        cycle.vitaminsG || 0,
-        cycle.mineralsG || 0,
-        cow.ageInMonths || 0,
-        cow.breed === "MX" ? 1 : 0,
-        cow.breed === "Murrah" ? 1 : 0,
-        cow.breed === "NX" ? 1 : 0,
-        cycle.healthStatus === "Healthy" ? 1 : 0,
-        cycle.healthStatus === "Unhealthy" ? 1 : 0,
-      ];
-
-      const mlRes = await axios.post(
-        "http://localhost:5000/api/predict",
-        { features },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const predictedMilk = mlRes.data.prediction;
-
-      prediction = { value: predictedMilk };
-      recommendation = generateMilkRecommendations(
-        milkingRecord.dailyMilk,
-        predictedMilk
-      );
-
-      await RecommendationService.createIfCritical({
-        cowId,
-        lactationCycleId: cycle._id,
-        milkingRecordId: milkingRecord._id,
-        recommendation,
-        session,
-      });
-
-      // update the corresponding predicted entry with actuals and mark done
-      try {
-        await MilkRecordPredRepository.updateByCycleAndDay(
-          cycle._id,
-          milkingRecord.milkingDay,
-          {
-            dailyMilkPred: predictedMilk,
-            dailyMilkPredDone: 1,
-            actualDailyMilk: milkingRecord.dailyMilk,
-            LactationPredStatus: "Completed",
-          },
-          session
-        );
-      } catch (e) {
-        console.error("Failed to update prediction record:", e.message);
+        } catch (e) {
+          console.error("Failed to update prediction record:", e.message);
+        }
       }
 
     }
@@ -280,7 +262,6 @@ class MilkingRecordService {
       lactationCycle: cycle,
       prediction,
       recommendation,
-      features,
     };
 
   } catch (err) {
@@ -297,47 +278,55 @@ class MilkingRecordService {
 
 export default new MilkingRecordService();
 
-function generateMilkRecommendations(actual, predicted) {
+function generateMilkRecommendations({
+  actual,
+  predicted,
+  milkingDay,
+  cyclePredictions = [],
+}) {
   const diff = actual - predicted;
   const diffPercent = predicted > 0 ? (diff / predicted) * 100 : 0;
+  const { isPeakTime, peakDay } = detectPeakWindow(
+    cyclePredictions,
+    milkingDay
+  );
 
+  // status acts as the recommendation identifier/key that will be translated on the frontend
   let status = "normal";
   let color = "blue";
-  let title = "";
-  let message = "";
-  let actions = [];
+
+  // action identifiers; each will correspond to a translation key as well
+  let actionKeys = [];
 
   if (diffPercent > 20) {
     status = "above_expected";
     color = "green";
-    title = "Excellent Performance ";
-    message = "Milk yield is significantly higher than the predicted value.";
-    actions = [
-      "Maintain the current feeding schedule",
-      "Continue regular health monitoring",
-      "This cow is performing better than expected",
+    actionKeys = [
+      "recommendation_above_expected_action_1",
+      "recommendation_above_expected_action_2",
+      "recommendation_above_expected_action_3",
     ];
-  }
-  else if (diffPercent >= -10 && diffPercent <= 20) {
+  } else if (diffPercent >= -10 && diffPercent <= 20) {
     status = "on_track";
     color = "blue";
-    title = "On Track ";
-    message = "Milk yield is within the expected prediction range.";
-    actions = [
-      "No immediate action required",
-      "Continue the current management routine",
+    actionKeys = [
+      "recommendation_on_track_action_1",
+      "recommendation_on_track_action_2",
     ];
-  }
-  else {
+  } else {
     status = "below_expected";
     color = "orange";
-    title = "Needs Attention ";
-    message = "Milk yield is lower than predicted.";
-    actions = [
-      "Review feed quality and quantity",
-      "Ensure sufficient clean water intake",
-      "Observe cow behavior for stress or discomfort",
-    ];
+    actionKeys = isPeakTime
+      ? [
+          "recommendation_below_expected_peak_action_1",
+          "recommendation_below_expected_peak_action_2",
+          "recommendation_below_expected_peak_action_3",
+        ]
+      : [
+          "recommendation_below_expected_non_peak_action_1",
+          "recommendation_below_expected_non_peak_action_2",
+          "recommendation_below_expected_non_peak_action_3",
+        ];
   }
 
   return {
@@ -345,10 +334,16 @@ function generateMilkRecommendations(actual, predicted) {
     predictedMilk: Number(predicted.toFixed(1)),
     deviation: Number(diff.toFixed(2)),
     deviationPercent: Number(diffPercent.toFixed(1)),
-    status,
+    status,              
     color,
-    title,
-    message,
-    actions,
+    key: status,         
+    actions: actionKeys, 
+    peakDay,
   };
+}
+
+function detectPeakWindow(cyclePredictions = [], milkingDay = 0) {
+  
+  const isPeakTime = milkingDay >= 45 && milkingDay <= 70;
+  return { isPeakTime, peakDay: null }; 
 }

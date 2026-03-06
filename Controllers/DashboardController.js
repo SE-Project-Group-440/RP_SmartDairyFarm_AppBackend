@@ -30,7 +30,7 @@ class DashboardController {
         }
       }
 
-      // Get active alerts (recommendations with critical status created today)
+     
       const recommendations = await RecommendationRepository.findAll();
       let activeAlerts = 0;
 
@@ -40,7 +40,7 @@ class DashboardController {
 
         if (
           recDate.getTime() === today.getTime() &&
-          (rec.status === "critical" || rec.severity === "high")
+          (rec.status === "below_expected" )
         ) {
           activeAlerts++;
         }
