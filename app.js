@@ -52,7 +52,7 @@ app.use("/dashboard", DashboardRoute);
 
 app.use(errors()); 
 
-app.listen(PORT, () =>
+app.listen(PORT, "0.0.0.0", () => 
 {
     Logger.info("Connected via Port " + PORT)
     MongoConnect()
