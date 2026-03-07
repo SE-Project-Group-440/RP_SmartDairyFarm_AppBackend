@@ -11,29 +11,23 @@ import UserRoute from "./Routes/UserRoute.js"
 import CowRoute from "./Routes/CowRoute.js"
 import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
-import ChatRouter from "./Routes/ChatRoute.js";
+import recommendationRoute from "./Routes/recommendationRoutes.js"
+import analyticsRoute from "./Routes/AnalyticsRoute.js"
+import DashboardRoute from "./Routes/DashboardRoute.js"
 import SttRoute from "./Routes/SttRoute.js";
 
 const app = express()
 const PORT = process.env.PORT
 
+// app.use(cors({
+//     origin: 'http://localhost:5173',
+//     optionsSuccessStatus: 200
+// }))
 
-const allowedOrigins = [
-  "http://localhost:5173",      // Vite frontend
-  "http://localhost:8081",      // Expo Web dev
-  "http://localhost:19000",     // Expo web default
-  "http://127.0.0.1:19000",
-  "http://172.28.1.64:19000"  // Expo Go mobile (replace with your PC LAN IP)
-];
+app.use(cors())
 
-app.use(cors());
-
-
-
-// security headers
+// security headerss
 app.use(helmet());
-
-
 
 app.use(session({ secret: process.env.SECRET, resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
@@ -53,13 +47,15 @@ app.use("/auth", UserRoute);
 app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
-app.use("/chat", ChatRouter);
+app.use("/rec",  recommendationRoute);
+app.use("/analytics", analyticsRoute);
+app.use("/dashboard", DashboardRoute);
 app.use("/stt", SttRoute);
-
+app.use("/chat", ChatRouter);
 
 app.use(errors()); 
 
-app.listen(PORT, () =>
+app.listen(PORT, "0.0.0.0", () => 
 {
     Logger.info("Connected via Port " + PORT)
     MongoConnect()
