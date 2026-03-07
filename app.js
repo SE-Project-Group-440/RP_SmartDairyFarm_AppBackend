@@ -15,6 +15,7 @@ import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
 import DashboardRoute from "./Routes/DashboardRoute.js"
 import SttRoute from "./Routes/SttRoute.js";
+import ChatRouter from "./Routes/ChatRoute.js";
 
 const app = express()
 const PORT = process.env.PORT

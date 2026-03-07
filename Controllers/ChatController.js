@@ -7,7 +7,7 @@ export const askChat = async (req, res) => {
   if (!query) return res.status(400).json({ error: "Query is required" });
 
   try {
-    const response = await axios.post("http://10.98.42.24:8002/chat", { query });
+    const response = await axios.post("http://127.0.0.1:8002/chat", { query });
     return res.json({
       answer: response.data.answer,
       audioUri: response.data.audioUri,
@@ -32,7 +32,7 @@ export const speechToText = async (req, res) => {
     });
 
     const response = await axios.post(
-      "http://10.98.42.24:8002/stt",
+      "http://127.0.0.1:8002/stt",
       formData,
       { headers: formData.getHeaders() }
     );
