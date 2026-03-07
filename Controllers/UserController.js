@@ -16,7 +16,17 @@ const loginUser = async (req, res) => {
     // Create a token
     const token = createToken(user._id);
 
-    res.status(200).json({ email, token });
+    // return token along with user info so frontend can hydrate immediately
+    res.status(200).json({
+      email,
+      token,
+      user: {
+        _id: user._id,
+        name: user.fname,
+        email: user.email,
+        admintype: user.admintype,
+      },
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -33,7 +43,16 @@ const signupUser = async (req, res) => {
     // Create a token
     const token = createToken(user._id);
 
-    res.status(200).json({ email, token });
+    res.status(200).json({
+      email,
+      token,
+      user: {
+        _id: user._id,
+        name: user.fname,
+        email: user.email,
+        admintype: user.admintype,
+      },
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -64,6 +83,7 @@ const getUserDetails = async (req, res) => {
 
     res.status(200).json({
       _id: user._id,
+      name : user.fname,
       email: user.email,
       admintype: user.admintype
     });
