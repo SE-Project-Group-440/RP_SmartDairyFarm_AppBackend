@@ -36,6 +36,16 @@ class LactationCycleRepository {
       .populate("cowId");            
   }
 
+  async getLastCompletedByCowId(cowId) {
+  return await LactationCycle.findOne({
+    cowId,
+    LactationStatus: "Completed",
+  })
+    .sort({ lactationRound: -1 })
+    .lean();
+}
+
+
 }
 
 export default new LactationCycleRepository();
