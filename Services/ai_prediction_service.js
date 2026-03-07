@@ -1,10 +1,11 @@
 import axios from "axios";
 
+const BASE_URL = process.env.FASTAPI_BACKEND;
 class AiPredictionService {
 
   async recommend(data) {
     const response = await axios.post(
-      "http://10.98.42.24:5001/api/ai/recommend",
+      `${BASE_URL}/api/ai/recommend`,
       data
     );
     return response.data;
@@ -12,7 +13,7 @@ class AiPredictionService {
 
   async predict(data) {
     const response = await axios.post(
-      "http://10.98.42.24:5001/api/ai/pregnancy",
+      `${BASE_URL}/api/ai/pregnancy`,
       data
     );
     return response.data;
