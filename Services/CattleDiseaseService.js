@@ -9,6 +9,8 @@ const AI_BASE_URL = "http://127.0.0.1:5000/api/api/cattle/predict";
 class CattleDiseaseService {
   // Generate care tips based on disease prediction
   static getCareInstructions(diseaseType) {
+    console.log("getCareInstructions called with:", diseaseType);
+    
     const careInstructions = {
       FMD: {
         diseaseInfo: {
@@ -101,10 +103,59 @@ class CattleDiseaseService {
             "Signs of secondary bacterial infection"
           ]
         }
+      },
+      UNHEALTHY: {
+        diseaseInfo: {
+          fullName: "Abnormal Blood Parameters",
+          emoji: "🩸",
+          description: "Blood tests show abnormal values indicating potential health issues requiring veterinary attention."
+        },
+        immediateActions: {
+          title: "🚨 Immediate Actions",
+          priority: "medium",
+          color: "orange",
+          actions: [
+            "Contact a veterinarian for detailed examination",
+            "Monitor the animal closely for symptoms",
+            "Isolate if showing signs of illness",
+            "Review feeding and water quality"
+          ]
+        },
+        care: {
+          title: "🩺 General Care & Monitoring",
+          treatments: [
+            "Ensure adequate nutrition and hydration",
+            "Provide comfortable, clean environment",
+            "Follow veterinary recommendations",
+            "Monitor temperature and appetite",
+            "Keep detailed health records"
+          ]
+        },
+        monitoring: {
+          title: "📊 Continue Monitoring",
+          symptoms: [
+            "Changes in appetite or behavior",
+            "Body temperature variations",
+            "Milk production changes",
+            "Physical signs of illness"
+          ]
+        },
+        prevention: {
+          title: "🛡️ Preventive Measures",
+          measures: [
+            "Regular health checkups",
+            "Maintain clean water sources",
+            "Ensure balanced nutrition",
+            "Follow vaccination schedules"
+          ]
+        }
       }
     };
 
-    return careInstructions[diseaseType] || null;
+    const result = careInstructions[diseaseType] || null;
+    console.log("getCareInstructions returning:", !!result, "for disease:", diseaseType);
+    console.log("Available keys in careInstructions:", Object.keys(careInstructions));
+    return result;
   }
 
   static async predict(req) {
@@ -217,10 +268,20 @@ class CattleDiseaseService {
       }
 
       // Extract the actual prediction from AI response
-      const actualPrediction = predictionResult.final_decision || 
-                              predictionResult.image_prediction || 
-                              predictionResult.prediction || 
-                              'Unknown';
+      let actualPrediction = predictionResult.final_decision || 
+                            predictionResult.image_prediction || 
+                            predictionResult.prediction || 
+                            'Unknown';
+
+      // If final decision is "Uncertain" but we have blood analysis, use that instead
+      if (actualPrediction === "Uncertain" && predictionResult.blood_analysis?.status) {
+        actualPrediction = predictionResult.blood_analysis.status;
+      }
+
+      // Normalize prediction case (capitalize first letter)
+      if (actualPrediction && actualPrediction !== 'Unknown') {
+        actualPrediction = actualPrediction.charAt(0).toUpperCase() + actualPrediction.slice(1).toLowerCase();
+      }
 
       // Extract confidence from available fields
       const confidence = predictionResult.overall_confidence || 
@@ -233,7 +294,13 @@ class CattleDiseaseService {
                     predictionResult.disease_severity || 
                     predictionResult.severity_level || 
                     predictionResult.severity_assessment?.level ||
+                    predictionResult.severity_assessment ||
                     null;
+
+      // Handle "none" severity as null
+      if (severity === "none" || severity === "None") {
+        severity = null;
+      }
 
       // Normalize severity to proper case (capitalize first letter)
       if (severity) {
@@ -272,13 +339,19 @@ class CattleDiseaseService {
 
   // Get care instructions for a specific disease (useful for testing or direct queries)
   static async getCareInstructionsByDisease(diseaseType) {
+    console.log("getCareInstructionsByDisease called with:", diseaseType);
+    
     const normalizedDisease = diseaseType.toUpperCase();
+    console.log("Normalized disease type:", normalizedDisease);
+    
     const careInstructions = this.getCareInstructions(normalizedDisease);
+    console.log("Care instructions found:", !!careInstructions);
     
     if (!careInstructions) {
+      console.log("No care instructions found for:", normalizedDisease);
       throw {
         status: 400,
-        message: `Care instructions not available for disease type: ${diseaseType}. Available types: FMD, LSD`
+        message: `Care instructions not available for disease type: ${diseaseType}. Available types: FMD, LSD, UNHEALTHY`
       };
     }
     
