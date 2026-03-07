@@ -1,16 +1,32 @@
-import MilkingRecordPred from "../models/MilkingRecordPred.js";
+import PredictedMilk from "../Models/PredictedMilkModel.js";
 
 class MilkingRecordPredRepository {
   async bulkCreate(records, session) {
-    return MilkingRecordPred.insertMany(records, { session });
+    return PredictedMilk.insertMany(records, { session });
+  }
+
+  async getByCycleAndDay(lactationCycleId, milkingDay) {
+    return PredictedMilk.findOne({
+      lactationCycle: lactationCycleId,
+      milkingDayPred: milkingDay,
+    });
   }
 
   async getByCowAndCycle(cowId, lactationCycleId) {
-    return MilkingRecordPred.find({
-      cowId,
-      lactationCycle: lactationCycleId,
-    }).sort({ milkingDayPred: 1 });
+    return PredictedMilk.find({ cowId, lactationCycle: lactationCycleId }).sort({ milkingDayPred: 1 });
+  }
+
+  async updateByCycleAndDay(lactationCycleId, milkingDay, update, session = null) {
+    const query = { lactationCycle: lactationCycleId, milkingDayPred: milkingDay };
+    if (session) {
+      return PredictedMilk.findOneAndUpdate(query, { $set: update }, { new: true, session });
+    }
+    return PredictedMilk.findOneAndUpdate(query, { $set: update }, { new: true });
+  }
+
+  async getByCycle(lactationCycleId) {
+    return PredictedMilk.find({ lactationCycle: lactationCycleId }).sort({ milkingDayPred: 1 });
   }
 }
-b
+
 export default new MilkingRecordPredRepository();

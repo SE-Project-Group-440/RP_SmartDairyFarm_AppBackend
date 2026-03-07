@@ -49,14 +49,12 @@ class CowService {
 
             const cow = await cowRepository.create(cowData, { session });
 
-            
             await session.commitTransaction();
             session.endSession();
 
             return {
                 cow,
-                lactationCycle,
-                message: "Cow created with default lactation + milking record",
+                message: "Cow created successfully",
             };
 
         } catch (error) {
@@ -106,6 +104,47 @@ class CowService {
         }
 
         return lastCow.tagId + 1;
+    }
+
+    async getCowsWithLactationSummary() {
+        return await cowRepository.getAllWithLactationSummary();
+    }
+
+    async getRecentHistory({ cowLimit = 5, milkLimit = 20 } = {}) {
+        // recent cows and recent milking records combined into a single timeline
+        const recentCows = await cowRepository.getRecent(cowLimit);
+        const recentMilks = await MilkingRecordRepository.getRecent(milkLimit);
+
+        const cowEvents = (recentCows || []).map((c) => ({
+            id: c._id,
+            date: c.createdAt ? new Date(c.createdAt) : new Date(),
+            type: "cow",
+            cowId: c._id,
+            cowName: c.name || (c.cowId || "Unknown"),
+            value: "New cow added",
+            notes: c.breed || null,
+        }));
+
+        const milkEvents = (recentMilks || []).map((m) => ({
+            id: m._id,
+            date: m.date ? new Date(m.date) : new Date(),
+            type: "milk",
+            cowId: m.cowId?._id || m.cowId,
+            cowName: m.cowId?.name || "",
+            value: m.dailyMilk != null ? `${Number(m.dailyMilk).toFixed(1)}L` : (m.morning != null || m.evening != null) ? `${m.morning || 0}/${m.evening || 0}` : "",
+            notes: m.notes || null,
+        }));
+
+        const combined = [...cowEvents, ...milkEvents];
+        combined.sort((a, b) => b.date - a.date);
+
+        // convert dates to YYYY-MM-DD strings for easy grouping on frontend
+        const normalized = combined.map((e) => ({
+            ...e,
+            date: e.date.toISOString().slice(0, 10),
+        }));
+
+        return normalized;
     }
 
 }

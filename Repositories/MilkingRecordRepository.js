@@ -29,12 +29,13 @@ class MilkingRecordRepository {
     return MilkingRecord.findByIdAndDelete(id);
   }
 
+
   getLastMilkingDay(lactationCycleId) {
     return MilkingRecord.findOne({ lactationCycle: lactationCycleId })
       .sort({ milkingDay: -1 });
   }
 
-  getLastMilkingDay(lactationCycleId) {
+  getLastMilkingDayMilkingDay(lactationCycleId) {
     return MilkingRecord.findOne({ lactationCycle: lactationCycleId })
       .sort({ milkingDay: -1 })
       .select("milkingDay")
@@ -45,6 +46,20 @@ class MilkingRecordRepository {
     return MilkingRecord.findOne({ lactationCycle: cycleId })
       .sort({ milkingDay: -1 })
       .select("milkingDay")
+      .lean();
+  }
+
+  // return all records for the current day (midnight to 23:59:59)
+  getTodayEntries() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    return MilkingRecord.find({
+      date: { $gte: start, $lte: end },
+    })
+      .populate("cowId")
       .lean();
   }
 
@@ -60,6 +75,14 @@ class MilkingRecordRepository {
       lactationCycle: cycleId,
       date: { $gte: start, $lte: end },
     });
+  }
+
+  async getRecent(limit = 20) {
+    return await MilkingRecord.find()
+      .sort({ date: -1 })
+      .limit(limit)
+      .populate("cowId")
+      .lean();
   }
 
 

@@ -59,6 +59,31 @@ class CowController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  async getCowsWithLactationSummary(req, res) {
+    try {
+      const cows = await cowService.getCowsWithLactationSummary();
+      res.status(200).json(cows);
+    } catch (err) {
+      res.status(500).json({
+        message: "Failed to fetch cow summary",
+        error: err.message,
+      });
+    }
+  }
+
+  async getRecentHistory(req, res) {
+    try {
+      const { cowLimit, milkLimit } = req.query;
+      const result = await cowService.getRecentHistory({
+        cowLimit: cowLimit ? Number(cowLimit) : undefined,
+        milkLimit: milkLimit ? Number(milkLimit) : undefined,
+      });
+      res.json({ success: true, data: result });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
 }
 
 export default new CowController();
