@@ -1,13 +1,15 @@
 import axios from "axios";
 import FormData from "form-data";
 
+const BASE_URL = process.env.FASTAPI_BACKEND;
+
 export const askChat = async (req, res) => {
   const { query } = req.body;
 
   if (!query) return res.status(400).json({ error: "Query is required" });
 
   try {
-    const response = await axios.post("http://127.0.0.1:8002/chat", { query });
+    const response = await axios.post(`${BASE_URL}/chat`, { query });
     return res.json({
       answer: response.data.answer,
       audioUri: response.data.audioUri,
@@ -32,7 +34,7 @@ export const speechToText = async (req, res) => {
     });
 
     const response = await axios.post(
-      "http://127.0.0.1:8002/stt",
+      `${BASE_URL}/stt`,
       formData,
       { headers: formData.getHeaders() }
     );
