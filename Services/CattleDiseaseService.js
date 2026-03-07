@@ -1,6 +1,8 @@
 import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
+import DiseasePredictionRepository from "../Repositories/DiseasePredictionRepository.js";
+import jwt from "jsonwebtoken";
 
 const AI_BASE_URL = "http://127.0.0.1:5000/api/api/cattle/predict";
 
@@ -106,11 +108,14 @@ class CattleDiseaseService {
   }
 
   static async predict(req) {
+    let uploadedFiles = []; // Track uploaded files for cleanup
+    
     try {
       const formData = new FormData();
 
       // Image file
       if (req.files?.image?.[0]) {
+        uploadedFiles.push(req.files.image[0].path);
         formData.append(
           "image",
           fs.createReadStream(req.files.image[0].path)
@@ -119,6 +124,7 @@ class CattleDiseaseService {
 
       // Report file
       if (req.files?.report?.[0]) {
+        uploadedFiles.push(req.files.report[0].path);
         formData.append(
           "report",
           fs.createReadStream(req.files.report[0].path)
@@ -140,9 +146,14 @@ class CattleDiseaseService {
       // Extract the prediction result
       const predictionResult = response.data;
       
+      // Get the actual prediction from the AI response
+      const actualPrediction = predictionResult.final_decision || 
+                              predictionResult.image_prediction || 
+                              predictionResult.prediction;
+      
       // Add care tips based on the prediction
-      if (predictionResult && predictionResult.prediction) {
-        const diseaseType = predictionResult.prediction.toUpperCase();
+      if (actualPrediction) {
+        const diseaseType = actualPrediction.toUpperCase();
         const careInstructions = this.getCareInstructions(diseaseType);
         
         if (careInstructions) {
@@ -151,9 +162,23 @@ class CattleDiseaseService {
         }
       }
 
+      // Save prediction to database
+      try {
+        await this.savePredictionToDatabase(req, predictionResult);
+      } catch (dbError) {
+        // Log the database error but don't fail the prediction response
+        console.error("Failed to save prediction to database:", dbError);
+      }
+
+      // Clean up uploaded files after successful processing
+      await this.cleanupUploadedFiles(uploadedFiles);
+
       return predictionResult;
 
     } catch (error) {
+      // Clean up uploaded files even if there's an error
+      await this.cleanupUploadedFiles(uploadedFiles);
+      
       throw {
         status: error.response?.status || 500,
         message:
@@ -161,6 +186,87 @@ class CattleDiseaseService {
           error.response?.data?.message ||
           error.message
       };
+    }
+  }
+
+  // Helper method to clean up uploaded files
+  static async cleanupUploadedFiles(filePaths) {
+    for (const filePath of filePaths) {
+      try {
+        await fs.promises.unlink(filePath);
+        console.log(`Cleaned up uploaded file: ${filePath}`);
+      } catch (error) {
+        console.error(`Failed to delete file ${filePath}:`, error.message);
+      }
+    }
+  }
+
+  // Helper method to save prediction to database
+  static async savePredictionToDatabase(req, predictionResult) {
+    try {
+      // Extract user ID from JWT token if available
+      let userId = null;
+      if (req.headers.authorization) {
+        try {
+          const token = req.headers.authorization.replace('Bearer ', '');
+          const decoded = jwt.decode(token);
+          userId = decoded?._id || decoded?.id;
+        } catch (jwtError) {
+          console.log("Could not decode JWT token:", jwtError.message);
+        }
+      }
+
+      // Extract the actual prediction from AI response
+      const actualPrediction = predictionResult.final_decision || 
+                              predictionResult.image_prediction || 
+                              predictionResult.prediction || 
+                              'Unknown';
+
+      // Extract confidence from available fields
+      const confidence = predictionResult.overall_confidence || 
+                        predictionResult.image_confidence || 
+                        predictionResult.confidence || 
+                        null;
+
+      // Extract severity from AI response
+      let severity = predictionResult.severity || 
+                    predictionResult.disease_severity || 
+                    predictionResult.severity_level || 
+                    predictionResult.severity_assessment?.level ||
+                    null;
+
+      // Normalize severity to proper case (capitalize first letter)
+      if (severity) {
+        severity = severity.charAt(0).toUpperCase() + severity.slice(1).toLowerCase();
+      }
+
+      // Prepare prediction data for database
+      const predictionData = {
+        userId: userId,
+        cowId: req.body?.cowId || null,
+        prediction: actualPrediction,
+        severity: severity,
+        confidence: confidence,
+        inputData: {
+          symptoms: req.body?.symptoms || null,
+          hasImage: !!(req.files?.image?.[0]),
+          hasReport: !!(req.files?.report?.[0]),
+          imageFileName: req.files?.image?.[0]?.filename || null,
+          reportFileName: req.files?.report?.[0]?.filename || null
+        },
+        aiResponse: predictionResult,
+        careInstructionsProvided: !!predictionResult.hasCareInstructions,
+        status: 'Active'
+      };
+
+      // Save to database
+      const savedPrediction = await DiseasePredictionRepository.create(predictionData);
+      console.log("Disease prediction saved with ID:", savedPrediction._id);
+
+      return savedPrediction;
+    } catch (error) {
+      console.error("Error saving prediction to database:", error);
+      throw error;
     }
   }
 
@@ -181,6 +287,78 @@ class CattleDiseaseService {
       careInstructions: careInstructions,
       hasCareInstructions: true
     };
+  }
+
+  // Get prediction history for a user
+  static async getUserPredictionHistory(userId, limit = 10) {
+    try {
+      return await DiseasePredictionRepository.getByUserId(userId, limit);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve prediction history"
+      };
+    }
+  }
+
+  // Get prediction history for a specific cow
+  static async getCowPredictionHistory(cowId) {
+    try {
+      return await DiseasePredictionRepository.getByCowId(cowId);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve cow prediction history"
+      };
+    }
+  }
+
+  // Get prediction statistics
+  static async getPredictionStatistics(userId = null) {
+    try {
+      return await DiseasePredictionRepository.getPredictionStats(userId);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve prediction statistics"
+      };
+    }
+  }
+
+  // Get recent predictions across the system
+  static async getRecentPredictions(days = 7) {
+    try {
+      return await DiseasePredictionRepository.getRecentPredictions(days);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve recent predictions"
+      };
+    }
+  }
+
+  // Get predictions by severity
+  static async getPredictionsBySeverity(severity) {
+    try {
+      return await DiseasePredictionRepository.getBySeverity(severity);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve predictions by severity"
+      };
+    }
+  }
+
+  // Get severity statistics
+  static async getSeverityStatistics(userId = null) {
+    try {
+      return await DiseasePredictionRepository.getSeverityStats(userId);
+    } catch (error) {
+      throw {
+        status: 500,
+        message: "Failed to retrieve severity statistics"
+      };
+    }
   }
 }
 
