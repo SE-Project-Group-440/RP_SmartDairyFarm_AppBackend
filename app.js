@@ -14,6 +14,12 @@ import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
 import DashboardRoute from "./Routes/DashboardRoute.js"
+import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
+import ChatRouter from "./Routes/ChatRoute.js";
+import CattleHeatRoutes from "./Routes/CattleHeatRoutes.js";
+import SprinklerRoutes from "./Routes/SprinklerRoutes.js";
+import { startSprinklerAutoService } from "./Services/SprinklerAutoService.js";
+ 
 
 const app = express()
 const PORT = process.env.PORT
@@ -46,9 +52,16 @@ app.use("/auth", UserRoute);
 app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
+
 app.use("/rec",  recommendationRoute);
 app.use("/analytics", analyticsRoute);
 app.use("/dashboard", DashboardRoute);
+
+app.use("/cattle", cattleDiseaseRoutes);
+app.use("/chat", ChatRouter);
+app.use("/cattle-heat", CattleHeatRoutes);
+app.use("/sprinkler", SprinklerRoutes);
+
 
 app.use(errors()); 
 
@@ -56,6 +69,8 @@ app.listen(PORT, "0.0.0.0", () =>
 {
     Logger.info("Connected via Port " + PORT)
     MongoConnect()
+    startSprinklerAutoService();
+    console.log("Server running on port 8000");
 })
 
 
