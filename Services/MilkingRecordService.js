@@ -5,6 +5,7 @@ import RecommendationService from "./RecommendationService.js";
 import MilkingPredictionService from "./MilkingPredictionService.js"; // added for generating full-curve predictions
 import mongoose from "mongoose";
 import MilkRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
+import axios from "axios";
 
 class MilkingRecordService {
   create(data) {
@@ -75,7 +76,7 @@ class MilkingRecordService {
 
  async createMilkingRecord(data) {
   const session = await mongoose.startSession();
-   const axios = require("axios");
+   
   session.startTransaction();
 
   try {
@@ -227,7 +228,12 @@ class MilkingRecordService {
 
       const todayPredictionResponse = await axios.post(
         `${process.env.FASTAPI_BACKEND}/api/predict`,
-        { features }
+        { features }, {
+              headers: token ? {
+                Authorization: `Bearer ${token}`,
+              } : {},
+              timeout: 10000,
+            }
       );
 
       const todayPredictedMilk = todayPredictionResponse.data.prediction;
@@ -378,7 +384,7 @@ function generateMilkRecommendations({
   return {
     actualMilk: Number(actual.toFixed(1)),
     initialPredictedMilk: Number(initialPrediction.toFixed(1)),
-    todayPredictedMilk: Number(todayPredictedMilk.toFixed(1)),
+    predictedMilk: Number(todayPredictedMilk.toFixed(1)),
     deviation: Number(diff.toFixed(2)),
     deviationPercent: Number(diffPercent.toFixed(1)),
     deviationFromInitial: Number(diffFromInitial.toFixed(2)),

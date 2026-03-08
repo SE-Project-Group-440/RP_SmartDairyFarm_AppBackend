@@ -17,7 +17,7 @@ import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
 import DashboardRoute from "./Routes/DashboardRoute.js"
 import SttRoute from "./Routes/SttRoute.js";
-import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
+// import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
 import ChatRouter from "./Routes/ChatRoute.js";
 import CattleHeatRoutes from "./Routes/CattleHeatRoutes.js";
 import SprinklerRoutes from "./Routes/SprinklerRoutes.js";
