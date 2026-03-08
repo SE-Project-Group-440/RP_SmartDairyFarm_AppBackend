@@ -27,8 +27,15 @@ const milkingRecordPredSchema = new mongoose.Schema(
     },
 
 
+    // initial prediction from lactation curve (generated at cycle start)
     dailyMilkPred: {
       type: Number
+    },
+
+    // today's prediction (generated when milk is recorded)
+    todayPredictedMilk: {
+      type: Number,
+      default: null,
     },
 
     // actual recorded milk for that predicted day (when available)
