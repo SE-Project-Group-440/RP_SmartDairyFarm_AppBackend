@@ -14,6 +14,7 @@ import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
 import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
 import DashboardRoute from "./Routes/DashboardRoute.js"
+import SttRoute from "./Routes/SttRoute.js";
 import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
 import ChatRouter from "./Routes/ChatRoute.js";
 import CattleHeatRoutes from "./Routes/CattleHeatRoutes.js";
@@ -56,6 +57,8 @@ app.use("/milk",  MilkingRecordRoute);
 app.use("/rec",  recommendationRoute);
 app.use("/analytics", analyticsRoute);
 app.use("/dashboard", DashboardRoute);
+app.use("/stt", SttRoute);
+app.use("/chat", ChatRouter);
 
 app.use("/cattle", cattleDiseaseRoutes);
 app.use("/chat", ChatRouter);
