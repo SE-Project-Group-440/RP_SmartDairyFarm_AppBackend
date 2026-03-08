@@ -11,6 +11,7 @@ import UserRoute from "./Routes/UserRoute.js"
 import CowRoute from "./Routes/CowRoute.js"
 import LactationCycleRoute from "./Routes/LactationCycleRoutes.js"
 import MilkingRecordRoute from "./Routes/MilkingRecordRoutes.js"
+import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
 import aiRecommendationRoutes from "./Routes/ai_prediction_routes.js";
 import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
@@ -54,6 +55,7 @@ app.use("/auth", UserRoute);
 app.use("/cows",  CowRoute);
 app.use("/lact",  LactationCycleRoute);
 app.use("/milk",  MilkingRecordRoute);
+app.use("/cattle", cattleDiseaseRoutes);
 
 app.use("/api/ai", aiRecommendationRoutes);
 app.use("/rec",  recommendationRoute);
