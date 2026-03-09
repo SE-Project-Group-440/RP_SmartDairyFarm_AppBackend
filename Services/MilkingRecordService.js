@@ -257,11 +257,11 @@ class MilkingRecordService {
           // Continue with initial prediction as fallback
         }
 
-        // Set return value with both predictions
+        
         prediction = {
           initialPrediction,
           todayPredictedMilk,
-          value: todayPredictedMilk // backward compatibility
+          value: todayPredictedMilk 
         };
 
         recommendation = generateMilkRecommendations({
@@ -332,7 +332,7 @@ function generateMilkRecommendations({
   milkingDay,
   cyclePredictions = [],
 }) {
-  // Calculate differences against today's prediction (most recent/accurate)
+  // Calculate differences against today prediction
   const diff = actual - todayPredictedMilk;
   const diffPercent = todayPredictedMilk > 0 ? (diff / todayPredictedMilk) * 100 : 0;
 
@@ -345,14 +345,14 @@ function generateMilkRecommendations({
     milkingDay
   );
 
-  // status acts as the recommendation identifier/key that will be translated on the frontend
+ 
   let status = "normal";
   let color = "blue";
 
-  // action identifiers; each will correspond to a translation key as well
+ 
   let actionKeys = [];
 
-  // Use today's prediction as primary comparison, but consider initial prediction context
+  
   if (diffPercent > 20) {
     status = "above_expected";
     color = "green";
