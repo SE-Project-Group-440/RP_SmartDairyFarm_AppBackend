@@ -207,37 +207,6 @@ class MilkingRecordService {
     let prediction = null;
     let recommendation = null;
     if (hasFullMilkData) {
-
-     
-
-      const features = [
-        milkingRecord.milkingDay,
-        cycle.lactationRound,
-        milkingRecord.milkingDay - 1,
-        cycle.calvingInterval || 0,
-        cycle.concentratedFoodsKg || 0,
-        cycle.vitaminsG || 0,
-        cycle.mineralsG || 0,
-        cow.ageInMonths || 0,
-        cow.breed === "MX" ? 1 : 0,
-        cow.breed === "Murrah" ? 1 : 0,
-        cow.breed === "NX" ? 1 : 0,
-        cycle.healthStatus === "Healthy" ? 1 : 0,
-        cycle.healthStatus === "Unhealthy" ? 1 : 0,
-      ];
-
-      const todayPredictionResponse = await axios.post(
-        `${process.env.FASTAPI_BACKEND}/api/predict`,
-        { features }, {
-              headers: token ? {
-                Authorization: `Bearer ${token}`,
-              } : {},
-              timeout: 10000,
-            }
-      );
-
-      const todayPredictedMilk = todayPredictionResponse.data.prediction;
-
       const predictedEntry = await MilkRecordPredRepository.getByCycleAndDay(
         cycle._id,
         milkingRecord.milkingDay
@@ -253,11 +222,46 @@ class MilkingRecordService {
         // Extract initial prediction from curve
         const initialPrediction = predictedEntry.dailyMilkPred;
 
-        // Set return value with today's prediction
-        prediction = { 
+        // Try to get today's fresh prediction from FastAPI
+        let todayPredictedMilk = initialPrediction; // fallback to initial prediction
+        try {
+          const features = [
+            milkingRecord.milkingDay,
+            cycle.lactationRound,
+            milkingRecord.milkingDay - 1,
+            cycle.calvingInterval || 0,
+            cycle.concentratedFoodsKg || 0,
+            cycle.vitaminsG || 0,
+            cycle.mineralsG || 0,
+            cow.ageInMonths || 0,
+            cow.breed === "MX" ? 1 : 0,
+            cow.breed === "Murrah" ? 1 : 0,
+            cow.breed === "NX" ? 1 : 0,
+            cycle.healthStatus === "Healthy" ? 1 : 0,
+            cycle.healthStatus === "Unhealthy" ? 1 : 0,
+          ];
+
+          const todayPredictionResponse = await axios.post(
+            `${process.env.FASTAPI_BACKEND}/api/predict`,
+            { features }, {
+                  headers: token ? {
+                    Authorization: `Bearer ${token}`,
+                  } : {},
+                  timeout: 10000,
+                }
+          );
+
+          todayPredictedMilk = todayPredictionResponse.data.prediction;
+        } catch (apiError) {
+          console.warn("FastAPI prediction failed, using initial prediction:", apiError.message);
+          // Continue with initial prediction as fallback
+        }
+
+        
+        prediction = {
           initialPrediction,
           todayPredictedMilk,
-          value: todayPredictedMilk // backward compatibility
+          value: todayPredictedMilk 
         };
 
         recommendation = generateMilkRecommendations({
@@ -293,7 +297,6 @@ class MilkingRecordService {
           console.error("Failed to update prediction record:", e.message);
         }
       }
-
     }
 
     /* -------------------- COMMIT -------------------- */
@@ -329,7 +332,7 @@ function generateMilkRecommendations({
   milkingDay,
   cyclePredictions = [],
 }) {
-  // Calculate differences against today's prediction (most recent/accurate)
+  // Calculate differences against today prediction
   const diff = actual - todayPredictedMilk;
   const diffPercent = todayPredictedMilk > 0 ? (diff / todayPredictedMilk) * 100 : 0;
 
@@ -342,14 +345,14 @@ function generateMilkRecommendations({
     milkingDay
   );
 
-  // status acts as the recommendation identifier/key that will be translated on the frontend
+ 
   let status = "normal";
   let color = "blue";
 
-  // action identifiers; each will correspond to a translation key as well
+ 
   let actionKeys = [];
 
-  // Use today's prediction as primary comparison, but consider initial prediction context
+  
   if (diffPercent > 20) {
     status = "above_expected";
     color = "green";
