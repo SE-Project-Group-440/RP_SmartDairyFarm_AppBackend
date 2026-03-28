@@ -1,10 +1,39 @@
 import service from "../Services/LactationCycleService.js";
 import predictionService from "../Services/MilkingPredictionService.js";
+import lactationCycleRepository from "../Repositories/LactationCycleRepository.js";
 
 class LactationCycleController {
   async create(req, res) {
     try {
-      const result = await service.create(req.body);
+      const { cowId, calvingDate, healthStatus } = req.body;
+      let cycle = await lactationCycleRepository.getLatestByCowId(cowId);
+
+      if (cycle && cycle.LactationStatus === "Active") {
+        return res.status(400).json({ error: "Cow already has an active lactation cycle. Please stop it first." });
+      }
+
+      const estimatedDryDate = calvingDate ? new Date(calvingDate) : new Date();
+      if (calvingDate) {
+        estimatedDryDate.setDate(estimatedDryDate.getDate() + 280);
+      }
+
+      const newData = {
+        cowId,
+        calvingDate,
+        LactationStatus: "Active",
+        lactationRound: cycle ? cycle.lactationRound + 1 : 1,
+        lastCalvingDate: cycle?.calvingDate || null,
+        healthStatus: healthStatus || "Healthy",
+        previousLactationLength: 0,
+        calvingInterval: 0,
+        concentratedFoodsKg: 0,
+        vitaminsG: 0,
+        mineralsG: 0,
+        estimatedDryDate,
+        ...req.body
+      };
+
+      const result = await service.create(newData);
       res.status(201).json(result);
 
       

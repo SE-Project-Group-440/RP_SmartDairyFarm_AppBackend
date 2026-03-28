@@ -29,29 +29,28 @@ class MilkingPredictionService {
 
       // Predict for 280 days
       for (let day = 1; day <= 280; day++) {
-        const lactationLength = day - 1;
+        const lactationLength = cycle.previousLactationLength || 280; // Standardize Lactation Length over the cycle
 
         const Breed_MX = cow.breed === "MX" ? 1 : 0;
         const Breed_Murrha = cow.breed === "Murrah" ? 1 : 0;
         const Breed_NX = cow.breed === "NX" ? 1 : 0;
 
-        const Health_Healthy = cycle.healthStatus === "Healthy" ? 1 : 0;
-        const Health_Unhealthy = cycle.healthStatus === "Unhealthy" ? 1 : 0;
+        const MilkingDay_sq = Math.pow(day, 2);
+        const MilkingDay_cube = Math.pow(day, 3);
+        const log_day = Math.log(day + 1);
 
         const features = [
-          day,
-          cycle.lactationRound,
-          lactationLength,
-          cycle.calvingInterval || 0,
-          cycle.concentratedFoodsKg || 0,
-          cycle.vitaminsG || 0,
-          cycle.mineralsG || 0,
-          cow.ageInMonths || 0,
-          Breed_MX,
-          Breed_Murrha,
-          Breed_NX,
-          Health_Healthy,
-          Health_Unhealthy,
+          cycle.calvingInterval || 0, // Caving Interval
+          cycle.lactationRound,       // LactationRound
+          cow.ageInMonths || 0,       // Age_in_Months
+          Breed_MX,                   // Breed_MX
+          MilkingDay_sq,              // MilkingDay_sq
+          day,                        // Milking Day
+          MilkingDay_cube,            // MilkingDay_cube
+          log_day,                    // log_day
+          lactationLength,            // Lactation Length
+          Breed_Murrha,               // Breed_Murrha
+          Breed_NX,                   // Breed_NX
         ];
 
         
