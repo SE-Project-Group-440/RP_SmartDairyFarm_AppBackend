@@ -11,5 +11,8 @@ router.post(
   "/confirm-pregnancy/:recommendationId",
   AiRecommendationController.confirmPregnancy
 );
+router.put("/update/:recommendationId", AiRecommendationController.updateRecommendation);
+router.delete("/delete/:recommendationId", AiRecommendationController.deleteRecommendation);
+
 
 export default router;
