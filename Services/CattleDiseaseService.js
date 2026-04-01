@@ -4,7 +4,7 @@ import fs from "fs";
 import DiseasePredictionRepository from "../Repositories/DiseasePredictionRepository.js";
 import jwt from "jsonwebtoken";
 
-const AI_BASE_URL = "http://127.0.0.1:5000/api/api/cattle/predict";
+const AI_BASE_URL = `${process.env.FASTAPI_BACKEND}/api/cattle/disease/predict`;
 
 class CattleDiseaseService {
   // Generate care tips based on disease prediction
