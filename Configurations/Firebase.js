@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import serviceAccount from "./automaticsprinkler-firebase-adminsdk-fbsvc-6c97c5d4ac.json" with { type: "json" };
+import serviceAccount from "../automaticsprinkler-firebase-adminsdk-fbsvc-6c97c5d4ac.json" with { type: "json" };
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),

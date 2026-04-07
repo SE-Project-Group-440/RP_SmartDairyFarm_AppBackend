@@ -78,6 +78,45 @@ class AiRecommendationController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  async updateRecommendation(req, res) {
+    try {
+      const { recommendationId } = req.params;
+      const { row } = req.body;
+
+      const recommendation = await AiRecommendation.findById(recommendationId);
+      if (!recommendation) {
+        return res.status(404).json({ error: "Recommendation not found" });
+      }
+
+      // Re-run the recommendation if we are still pending to get new date
+      if (recommendation.status === "PENDING") {
+        const result = await AiPredictionService.recommend({ row });
+        recommendation.recommended_next_ai = result.recommended_next_ai;
+      }
+
+      recommendation.input_data = row;
+      await recommendation.save();
+
+      res.json({ message: "Updated successfully", recommendation });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async deleteRecommendation(req, res) {
+    try {
+      const { recommendationId } = req.params;
+      const deleted = await AiRecommendation.findByIdAndDelete(recommendationId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Recommendation not found" });
+      }
+      res.json({ message: "Deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
   async getAll(req, res) {
   try {
     const data = await AiRecommendation.find().sort({ createdAt: -1 });
