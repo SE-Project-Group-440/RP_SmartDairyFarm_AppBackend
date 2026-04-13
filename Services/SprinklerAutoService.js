@@ -10,7 +10,7 @@ const collarIds = ["Cattle1", "Cattle2"];
 
 export const startSprinklerAutoService = () => {
 
-  cron.schedule("*/3 * * * * *", async () => {
+  cron.schedule("*/1 * * * *", async () => {
 
     console.log("Running sprinkler auto check...");
 
