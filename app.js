@@ -15,6 +15,7 @@ import cattleDiseaseRoutes from "./Routes/CattleDiseaseRoutes.js"
 import recommendationRoute from "./Routes/recommendationRoutes.js"
 import analyticsRoute from "./Routes/AnalyticsRoute.js"
 import DashboardRoute from "./Routes/DashboardRoute.js"
+import RetrainingPipelineRoute from "./Routes/RetrainingPipelineRoutes.js"
 
 const app = express()
 const PORT = process.env.PORT
@@ -51,6 +52,7 @@ app.use("/cattle", cattleDiseaseRoutes);
 app.use("/rec",  recommendationRoute);
 app.use("/analytics", analyticsRoute);
 app.use("/dashboard", DashboardRoute);
+app.use("/pipeline", RetrainingPipelineRoute);
 
 app.use(errors()); 
 
