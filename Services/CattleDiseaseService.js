@@ -2,6 +2,7 @@ import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
 import DiseasePredictionRepository from "../Repositories/DiseasePredictionRepository.js";
+import HybridRetrainingService from "./HybridRetrainingService.js";
 import jwt from "jsonwebtoken";
 
 const AI_BASE_URL = `${process.env.FASTAPI_BACKEND}/api/cattle/disease/predict`;
@@ -214,11 +215,29 @@ class CattleDiseaseService {
       }
 
       // Save prediction to database
+      let savedPrediction = null;
       try {
-        await this.savePredictionToDatabase(req, predictionResult);
+        savedPrediction = await this.savePredictionToDatabase(req, predictionResult);
       } catch (dbError) {
         // Log the database error but don't fail the prediction response
         console.error("Failed to save prediction to database:", dbError);
+      }
+
+      // Feed every prediction result into the hybrid retraining pipeline
+      try {
+        await HybridRetrainingService.evaluateAndStoreSample(predictionResult, {
+          predictionId: savedPrediction?._id || null,
+          cowId: req.body?.cowId || null,
+          userId: savedPrediction?.userId || null,
+          inputMetadata: {
+            hasImage: !!(req.files?.image?.[0]),
+            hasReport: !!(req.files?.report?.[0]),
+            hasSymptoms: !!req.body?.symptoms
+          }
+        });
+      } catch (pipelineError) {
+        // Non-fatal: prediction response should still be returned to client
+        console.error("Failed to enqueue sample for retraining pipeline:", pipelineError);
       }
 
       // Clean up uploaded files after successful processing
