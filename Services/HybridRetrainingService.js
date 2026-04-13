@@ -117,7 +117,7 @@ async function evaluateAndStoreSample(predictionResult, meta = {}) {
     // ── Qualification logic ──────────────────────────────────────────────────
     const meetsConf   = confidence >= dynamicThresholds.confidence;
     const meetsModal  = CONFIG.NO_VET_MODE
-      ? agreement.allAgree                             // unanimous required in no-vet mode
+      ? agreement.allAgree                             
       : agreement.score >= dynamicThresholds.crossModal;
 
     const qualifies   = meetsConf && meetsModal;
