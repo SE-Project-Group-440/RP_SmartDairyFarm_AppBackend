@@ -5,6 +5,7 @@ import RecommendationService from "./RecommendationService.js";
 import MilkingPredictionService from "./MilkingPredictionService.js"; // added for generating full-curve predictions
 import mongoose from "mongoose";
 import MilkRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
+import axios from "axios";
 
 class MilkingRecordService {
   create(data) {
@@ -75,6 +76,7 @@ class MilkingRecordService {
 
  async createMilkingRecord(data) {
   const session = await mongoose.startSession();
+   
   session.startTransaction();
 
   try {
@@ -217,10 +219,55 @@ class MilkingRecordService {
         const allCyclePredictions =
           await MilkRecordPredRepository.getByCycle(cycle._id);
 
-        prediction = { value: predictedEntry.dailyMilkPred };
+        // Extract initial prediction from curve
+        const initialPrediction = predictedEntry.dailyMilkPred;
+
+        // Try to get today's fresh prediction from FastAPI
+        let todayPredictedMilk = initialPrediction; // fallback to initial prediction
+        try {
+          const features = [
+            milkingRecord.milkingDay,
+            cycle.lactationRound,
+            milkingRecord.milkingDay - 1,
+            cycle.calvingInterval || 0,
+            cycle.concentratedFoodsKg || 0,
+            cycle.vitaminsG || 0,
+            cycle.mineralsG || 0,
+            cow.ageInMonths || 0,
+            cow.breed === "MX" ? 1 : 0,
+            cow.breed === "Murrah" ? 1 : 0,
+            cow.breed === "NX" ? 1 : 0,
+            cycle.healthStatus === "Healthy" ? 1 : 0,
+            cycle.healthStatus === "Unhealthy" ? 1 : 0,
+          ];
+
+          const todayPredictionResponse = await axios.post(
+            `${process.env.FASTAPI_BACKEND}/api/predict`,
+            { features }, {
+                  headers: token ? {
+                    Authorization: `Bearer ${token}`,
+                  } : {},
+                  timeout: 10000,
+                }
+          );
+
+          todayPredictedMilk = todayPredictionResponse.data.prediction;
+        } catch (apiError) {
+          console.warn("FastAPI prediction failed, using initial prediction:", apiError.message);
+          // Continue with initial prediction as fallback
+        }
+
+        
+        prediction = {
+          initialPrediction,
+          todayPredictedMilk,
+          value: todayPredictedMilk 
+        };
+
         recommendation = generateMilkRecommendations({
           actual: milkingRecord.dailyMilk,
-          predicted: predictedEntry.dailyMilkPred,
+          initialPrediction: initialPrediction,
+          todayPredictedMilk: todayPredictedMilk,
           milkingDay: milkingRecord.milkingDay,
           cyclePredictions: allCyclePredictions,
         });
@@ -239,6 +286,7 @@ class MilkingRecordService {
             cycle._id,
             milkingRecord.milkingDay,
             {
+              todayPredictedMilk,
               dailyMilkPredDone: 1,
               actualDailyMilk: milkingRecord.dailyMilk,
               LactationPredStatus: "Completed",
@@ -249,7 +297,6 @@ class MilkingRecordService {
           console.error("Failed to update prediction record:", e.message);
         }
       }
-
     }
 
     /* -------------------- COMMIT -------------------- */
@@ -280,24 +327,32 @@ export default new MilkingRecordService();
 
 function generateMilkRecommendations({
   actual,
-  predicted,
+  initialPrediction,
+  todayPredictedMilk,
   milkingDay,
   cyclePredictions = [],
 }) {
-  const diff = actual - predicted;
-  const diffPercent = predicted > 0 ? (diff / predicted) * 100 : 0;
+  // Calculate differences against today prediction
+  const diff = actual - todayPredictedMilk;
+  const diffPercent = todayPredictedMilk > 0 ? (diff / todayPredictedMilk) * 100 : 0;
+
+  // Also calculate difference against initial prediction for context
+  const diffFromInitial = actual - initialPrediction;
+  const diffFromInitialPercent = initialPrediction > 0 ? (diffFromInitial / initialPrediction) * 100 : 0;
+
   const { isPeakTime, peakDay } = detectPeakWindow(
     cyclePredictions,
     milkingDay
   );
 
-  // status acts as the recommendation identifier/key that will be translated on the frontend
+ 
   let status = "normal";
   let color = "blue";
 
-  // action identifiers; each will correspond to a translation key as well
+ 
   let actionKeys = [];
 
+  
   if (diffPercent > 20) {
     status = "above_expected";
     color = "green";
@@ -331,9 +386,12 @@ function generateMilkRecommendations({
 
   return {
     actualMilk: Number(actual.toFixed(1)),
-    predictedMilk: Number(predicted.toFixed(1)),
+    initialPredictedMilk: Number(initialPrediction.toFixed(1)),
+    predictedMilk: Number(todayPredictedMilk.toFixed(1)),
     deviation: Number(diff.toFixed(2)),
     deviationPercent: Number(diffPercent.toFixed(1)),
+    deviationFromInitial: Number(diffFromInitial.toFixed(2)),
+    deviationFromInitialPercent: Number(diffFromInitialPercent.toFixed(1)),
     status,              
     color,
     key: status,         

@@ -5,7 +5,7 @@ import DiseasePredictionRepository from "../Repositories/DiseasePredictionReposi
 import HybridRetrainingService from "./HybridRetrainingService.js";
 import jwt from "jsonwebtoken";
 
-const AI_BASE_URL = "http://localhost:8000/api/cattle/disease/predict";
+const AI_BASE_URL = `${process.env.FASTAPI_BACKEND}/api/cattle/disease/predict`;
 
 class CattleDiseaseService {
   // Generate care tips based on disease prediction

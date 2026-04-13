@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import axios from "axios";
-
+import "dotenv/config"
 import cowRepository from "../Repositories/CowRepository.js";
 import lactationCycleRepository from "../Repositories/LactationCycleRepository.js";
 import MilkingRecordPredRepository from "../Repositories/MilkRecordPredRepository.js";
@@ -61,7 +61,7 @@ class MilkingPredictionService {
           }
           
           const response = await axios.post(
-            "http://localhost:5000/api/predict",
+            `${process.env.FASTAPI_BACKEND}/api/predict`,
             { features },
             {
               headers: token ? {
@@ -102,7 +102,7 @@ class MilkingPredictionService {
       await session.commitTransaction();
       session.endSession();
 
-      console.log(`[Prediction] ✅ COMPLETE: Full lactation prediction generated for cow ${cowId}`);
+      console.log(`[Prediction] COMPLETE: Full lactation prediction generated for cow ${cowId}`);
       
       return {
         cowId,
@@ -111,7 +111,7 @@ class MilkingPredictionService {
         message: "Full lactation prediction generated successfully",
       };
     } catch (err) {
-      console.error(`[Prediction] ❌ FAILED:`, err.message);
+      console.error(`[Prediction] FAILED:`, err.message);
       console.error(`[Prediction] Stack:`, err.stack);
       
       await session.abortTransaction();
