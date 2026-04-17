@@ -159,6 +159,8 @@ class MilkingRecordService {
 
       const milkingDay = lastMilk ? lastMilk.milkingDay + 1 : 1;
 
+      const dailyMilk = evening != null ? morning + evening : null;
+
       milkingRecord = await MilkingRecordRepository.create(
         {
           cowId,
@@ -166,8 +168,8 @@ class MilkingRecordService {
           milkingDay,
           date: new Date(),
           morning,
-          evening: null,
-          dailyMilk: null,
+          evening: evening || null,
+          dailyMilk,
           notes,
         },
         { session }
@@ -212,55 +214,52 @@ class MilkingRecordService {
         milkingRecord.milkingDay
       );
 
-      if (
-        predictedEntry &&
-        typeof predictedEntry.dailyMilkPred === "number"
-      ) {
-        const allCyclePredictions =
-          await MilkRecordPredRepository.getByCycle(cycle._id);
+      let initialPrediction = null;
+      if (predictedEntry && typeof predictedEntry.dailyMilkPred === "number") {
+        initialPrediction = predictedEntry.dailyMilkPred;
+      }
 
-        // Extract initial prediction from curve
-        const initialPrediction = predictedEntry.dailyMilkPred;
+      // Try to get today's fresh prediction from FastAPI
+      let todayPredictedMilk = initialPrediction; // fallback
+      try {
+        const milkingDay = milkingRecord.milkingDay;
+        const MilkingDay_sq = Math.pow(milkingDay, 2);
+        const MilkingDay_cube = Math.pow(milkingDay, 3);
+        const log_day = Math.log(milkingDay + 1);
+        const lactationLength = cycle.previousLactationLength || 280;
 
-        // Try to get today's fresh prediction from FastAPI
-        let todayPredictedMilk = initialPrediction; 
-        try {
-          const milkingDay = milkingRecord.milkingDay;
-          const MilkingDay_sq = Math.pow(milkingDay, 2);
-          const MilkingDay_cube = Math.pow(milkingDay, 3);
-          const log_day = Math.log(milkingDay + 1);
-          const lactationLength = cycle.previousLactationLength || 280;
+        const features = [
+          cycle.calvingInterval || 0,     // Caving Interval
+          cycle.lactationRound,           // LactationRound
+          cow.ageInMonths || 0,           // Age_in_Months
+          cow.breed === "MX" ? 1 : 0,     // Breed_MX
+          MilkingDay_sq,                  // MilkingDay_sq
+          milkingDay,                     // Milking Day
+          MilkingDay_cube,                // MilkingDay_cube
+          log_day,                        // log_day
+          lactationLength,                // Lactation Length
+          cow.breed === "Murrah" ? 1 : 0, // Breed_Murrha
+          cow.breed === "NX" ? 1 : 0,     // Breed_NX
+        ];
 
-          const features = [
-            cycle.calvingInterval || 0,     // Caving Interval
-            cycle.lactationRound,           // LactationRound
-            cow.ageInMonths || 0,           // Age_in_Months
-            cow.breed === "MX" ? 1 : 0,     // Breed_MX
-            MilkingDay_sq,                  // MilkingDay_sq
-            milkingDay,                     // Milking Day
-            MilkingDay_cube,                // MilkingDay_cube
-            log_day,                        // log_day
-            lactationLength,                // Lactation Length
-            cow.breed === "Murrah" ? 1 : 0, // Breed_Murrha
-            cow.breed === "NX" ? 1 : 0,     // Breed_NX
-          ];
+        const todayPredictionResponse = await axios.post(
+          `${process.env.FASTAPI_BACKEND}/api/predict`,
+          { features }, {
+            headers: token ? {
+              Authorization: `Bearer ${token}`,
+            } : {},
+            timeout: 10000,
+          }
+        );
 
-          const todayPredictionResponse = await axios.post(
-            `${process.env.FASTAPI_BACKEND}/api/predict`,
-            { features }, {
-                  headers: token ? {
-                    Authorization: `Bearer ${token}`,
-                  } : {},
-                  timeout: 10000,
-                }
-          );
+        todayPredictedMilk = todayPredictionResponse.data.prediction;
+      } catch (apiError) {
+        console.warn("FastAPI prediction failed, using initial prediction:", apiError.message);
+        // Continue with initial prediction as fallback
+      }
 
-          todayPredictedMilk = todayPredictionResponse.data.prediction;
-        } catch (apiError) {
-          console.warn("FastAPI prediction failed, using initial prediction:", apiError.message);
-          // Continue with initial prediction as fallback
-        }
-
+      // If we have a prediction, generate recommendation
+      if (todayPredictedMilk !== null) {
         prediction = {
           initialPrediction,
           todayPredictedMilk,
@@ -306,20 +305,22 @@ class MilkingRecordService {
         });
 
         // update the corresponding predicted entry with actuals and mark done
-        try {
-          await MilkRecordPredRepository.updateByCycleAndDay(
-            cycle._id,
-            milkingRecord.milkingDay,
-            {
-              todayPredictedMilk,
-              dailyMilkPredDone: 1,
-              actualDailyMilk: milkingRecord.dailyMilk,
-              LactationPredStatus: "Completed",
-            },
-            session
-          );
-        } catch (e) {
-          console.error("Failed to update prediction record:", e.message);
+        if (predictedEntry) {
+          try {
+            await MilkRecordPredRepository.updateByCycleAndDay(
+              cycle._id,
+              milkingRecord.milkingDay,
+              {
+                todayPredictedMilk,
+                dailyMilkPredDone: 1,
+                actualDailyMilk: milkingRecord.dailyMilk,
+                LactationPredStatus: "Completed",
+              },
+              session
+            );
+          } catch (e) {
+            console.error("Failed to update prediction record:", e.message);
+          }
         }
       }
     }
