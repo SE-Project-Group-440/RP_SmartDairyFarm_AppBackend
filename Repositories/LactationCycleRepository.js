@@ -18,7 +18,7 @@ class LactationCycleRepository {
   }
 
   async update(id, data) {
-    return await LactationCycle.findByIdAndUpdate(id, data, { new: true });
+    return await LactationCycle.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
 
   async delete(id) {

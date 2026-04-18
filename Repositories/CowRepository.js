@@ -21,7 +21,7 @@ class CowRepository {
   }
 
   async update(id, data) {
-    return await Cow.findByIdAndUpdate(id, data, { new: true });
+    return await Cow.findByIdAndUpdate(id, data, {returnDocument: "after"});
   }
 
   async delete(id) {

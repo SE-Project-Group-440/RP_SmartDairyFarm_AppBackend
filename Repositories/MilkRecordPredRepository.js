@@ -19,9 +19,9 @@ class MilkingRecordPredRepository {
   async updateByCycleAndDay(lactationCycleId, milkingDay, update, session = null) {
     const query = { lactationCycle: lactationCycleId, milkingDayPred: milkingDay };
     if (session) {
-      return PredictedMilk.findOneAndUpdate(query, { $set: update }, { new: true, session });
+      return PredictedMilk.findOneAndUpdate(query, { $set: update }, { returnDocument: "after", session });
     }
-    return PredictedMilk.findOneAndUpdate(query, { $set: update }, { new: true });
+    return PredictedMilk.findOneAndUpdate(query, { $set: update }, { returnDocument: "after"});
   }
 
   async getByCycle(lactationCycleId) {

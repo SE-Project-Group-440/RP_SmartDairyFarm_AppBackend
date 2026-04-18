@@ -29,6 +29,9 @@ const RecommendationSchema = new mongoose.Schema(
     title: String,
     message: String,
 
+    actualMilk: Number,
+    expectedMilk: Number,
+
     actions: [String],
 
     isResolved: {
