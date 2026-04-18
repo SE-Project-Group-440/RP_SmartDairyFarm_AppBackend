@@ -17,12 +17,20 @@ class MilkingRecordRepository {
     return MilkingRecord.find({ lactationCycleId });
   }
 
-  findById(id) {
-    return MilkingRecord.findById(id);
+  findById(id, options = {}) {
+    const query = MilkingRecord.findById(id);
+    if (options.session) {
+      query.session(options.session);
+    }
+    return query;
   }
 
-  update(id, data) {
-    return MilkingRecord.findByIdAndUpdate(id, data, { new: true });
+  update(id, data, options = {}) {
+    return MilkingRecord.findByIdAndUpdate(id, data, {
+      returnDocument: "after",
+      new: true,
+      ...options,
+    });
   }
 
   delete(id) {

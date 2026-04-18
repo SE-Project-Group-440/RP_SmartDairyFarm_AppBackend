@@ -44,10 +44,7 @@ class MilkingPredictionService {
           cycle.lactationRound,       // LactationRound
           cow.ageInMonths || 0,       // Age_in_Months
           Breed_MX,                   // Breed_MX
-          MilkingDay_sq,              // MilkingDay_sq
           day,                        // Milking Day
-          MilkingDay_cube,            // MilkingDay_cube
-          log_day,                    // log_day
           lactationLength,            // Lactation Length
           Breed_Murrha,               // Breed_Murrha
           Breed_NX,                   // Breed_NX

@@ -6,6 +6,8 @@ class RecommendationService {
     lactationCycleId,
     milkingRecordId,
     recommendation,
+    morningMilk,
+    eveningMilk,
     session,
   }) {
     if (!recommendation) return null;
@@ -23,6 +25,8 @@ class RecommendationService {
         message: `${recommendation.key}_message`,
         actualMilk: recommendation.actualMilk,
         expectedMilk: recommendation.predictedMilk,
+        morningMilk,
+        eveningMilk,
         actions: recommendation.actions, // already an array of translation keys
       },
       { session }
@@ -37,7 +41,7 @@ class RecommendationService {
     return RecommendationRepository.findActiveByCow(cowId);
   }
 
-   async getAll() {
+  async getAll() {
     return RecommendationRepository.findAll();
   }
 }
@@ -73,7 +77,9 @@ export function generateMilkRecommendations({
   initialPrediction,
   yesterdayMilk,
   last3Days,
-  milkingDay
+  milkingDay,
+  morningMilk,
+  eveningMilk,
 }) {
   // 1. Actual vs Predicted (today)
   const predicted = todayPredictedMilk || initialPrediction || actual; // fallback to avoid NaN
@@ -143,6 +149,8 @@ export function generateMilkRecommendations({
     status: statusKey,
     key: statusKey, // used as localization key in store/UI
     color,
+    morningMilk: typeof morningMilk === 'number' ? Number(morningMilk.toFixed(1)) : null,
+    eveningMilk: typeof eveningMilk === 'number' ? Number(eveningMilk.toFixed(1)) : null,
     actions // array of string recommendations
   };
 }

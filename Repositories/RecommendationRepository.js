@@ -25,7 +25,7 @@ class RecommendationRepository {
         isResolved: true,
         resolvedAt: new Date(),
       },
-      { new: true }
+      {returnDocument: "after" }
     );
   }
 }

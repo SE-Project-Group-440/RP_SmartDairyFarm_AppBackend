@@ -82,7 +82,7 @@ app.listen(PORT, "0.0.0.0", () =>
     Logger.info("Connected via Port " + PORT)
     MongoConnect()
     startSprinklerAutoService();
-    console.log("Server running on port 8000");
+    console.log("Server running on port" + PORT);
 })
 
 
