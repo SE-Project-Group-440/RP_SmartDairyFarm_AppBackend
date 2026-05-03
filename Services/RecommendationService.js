@@ -87,9 +87,10 @@ export function generateMilkRecommendations({
   const deviationPercent = predicted > 0 ? (deviation / predicted) * 100 : 0;
 
   let status = "on_track";
-  if (deviationPercent > 20) {
+  // Less sensitive: only flag if deviation > 25% or < -20%
+  if (deviationPercent > 25) {
     status = "above_expected";
-  } else if (deviationPercent < -10) {
+  } else if (deviationPercent < -20) {
     status = "below_expected";
   }
 
